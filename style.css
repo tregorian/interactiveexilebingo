@@ -5,7 +5,12 @@
 }
 
 body {
-  background: #0a0a0a;
+  background: #0d0b0a;
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(106, 37, 37, 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 100%, rgba(218, 172, 100, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 0% 50%, rgba(30, 40, 80, 0.1) 0%, transparent 40%),
+    radial-gradient(ellipse at 100% 50%, rgba(60, 20, 80, 0.1) 0%, transparent 40%);
   color: #e0e0e0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   min-height: 100vh;
@@ -50,12 +55,14 @@ header {
 }
 
 .header-right {
-  font-size: 1rem;
-  font-weight: 900;
-  letter-spacing: 2px;
-  text-align: right;
-  line-height: 1.1;
-  color: #ccc;
+  display: flex;
+  align-items: center;
+}
+
+.exiles-logo {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
 }
 
 /* Board */
@@ -268,6 +275,16 @@ main {
   50% { box-shadow: 0 0 14px rgba(255, 215, 0, 0.7); }
 }
 
+/* God section symbol overlay — one per god cluster */
+.god-symbol-overlay {
+  pointer-events: none;
+  z-index: 0;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.3;
+}
+
 /* God Colors */
 .tile.god-guthix { background: #1e6b1e; }
 .tile.god-armadyl { background: #5080a0; }
@@ -293,12 +310,12 @@ main {
   left: 0;
   right: 0;
   background: #1a1a2e;
-  border-top: 3px solid #444;
+  border-top: 3px solid var(--info-god-color, #444);
   padding: 16px 24px;
   max-height: 40vh;
   overflow-y: auto;
   transform: translateY(0);
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, border-color 0.3s ease;
   z-index: 100;
 }
 
@@ -316,6 +333,7 @@ main {
   font-size: 1.5rem;
   cursor: pointer;
   line-height: 1;
+  z-index: 2;
 }
 
 .info-close:hover {
@@ -325,6 +343,20 @@ main {
 .info-content {
   max-width: 800px;
   margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.info-panel .info-god-symbol {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 80px;
+  height: 80px;
+  opacity: 0.2;
+  pointer-events: none;
+  object-fit: contain;
 }
 
 .info-header {

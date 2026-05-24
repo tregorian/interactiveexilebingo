@@ -1,3 +1,38 @@
+// === God symbol URLs ===
+const GOD_SYMBOL = {
+  'Guthix': 'https://oldschool.runescape.wiki/images/Guthix_symbol.png',
+  'Armadyl': 'https://oldschool.runescape.wiki/images/Armadyl_symbol.png',
+  'Bandos': 'https://oldschool.runescape.wiki/images/Bandos_symbol.png',
+  'Saradomin': 'https://oldschool.runescape.wiki/images/Saradomin_symbol.png',
+  'Saradomin Ascension': 'https://oldschool.runescape.wiki/images/Saradomin_symbol.png',
+  'Seren': 'https://oldschool.runescape.wiki/images/Seren_symbol.png',
+  'Seren Ascension': 'https://oldschool.runescape.wiki/images/Seren_symbol.png',
+  'Zamorak': 'https://oldschool.runescape.wiki/images/Zamorak_symbol.png',
+  'Zamorak Ascension': 'https://oldschool.runescape.wiki/images/Zamorak_symbol.png',
+  'Zaros': 'https://oldschool.runescape.wiki/images/Zaros_symbol.png',
+  'Zaros Ascension': 'https://oldschool.runescape.wiki/images/Zaros_symbol.png',
+  'Tumeken': 'https://oldschool.runescape.wiki/images/Tumeken_symbol.png',
+  'Ralos': 'https://oldschool.runescape.wiki/images/Ralos_symbol.png',
+};
+
+// === God background colors (for info panel) ===
+const GOD_BG_COLOR = {
+  'Guthix': '#1e6b1e',
+  'Armadyl': '#5080a0',
+  'Bandos': '#5a4a1a',
+  'Saradomin': '#2040a0',
+  'Saradomin Ascension': '#3060c0',
+  'Seren': '#20a0b0',
+  'Seren Ascension': '#30b8c8',
+  'Zamorak': '#a01020',
+  'Zamorak Ascension': '#c02030',
+  'Zaros': '#3a1060',
+  'Zaros Ascension': '#5a2890',
+  'Tumeken': '#c09020',
+  'Ralos': '#d07020',
+  'ZAMAJOHNDAMIX': '#c0b8b0',
+};
+
 // === God color CSS class mapping ===
 const GOD_CLASS = {
   'Guthix': 'god-guthix',
@@ -225,7 +260,13 @@ async function init() {
   renderBoard();
   setupInfoPanel();
 
-  // Load teams + completions
+  // Load teams + completions (only with ?dev=true)
+  var devMode = new URLSearchParams(window.location.search).get('dev') === 'true';
+  if (!devMode) {
+    document.getElementById('team-panel-left').style.display = 'none';
+    document.getElementById('team-panel-right').style.display = 'none';
+  }
+  if (!devMode) return;
   try {
     var teamsResp = await fetch('teams.json');
     teamsData = await teamsResp.json();
@@ -317,6 +358,40 @@ function renderBoard() {
     if (tiles.length > cells.length) {
       console.warn(`${god}: ${tiles.length - cells.length} tiles could not be placed`);
     }
+  }
+
+  // Render god symbol overlays (one per section)
+  renderGodOverlays(board, sectionCells);
+}
+
+function renderGodOverlays(board, sectionCells) {
+  // Merge ascension cells into base god so they share one overlay
+  var merged = {};
+  for (var god in sectionCells) {
+    var base = god.replace(' Ascension', '');
+    if (!merged[base]) merged[base] = [];
+    merged[base] = merged[base].concat(sectionCells[god]);
+  }
+
+  for (var godName in merged) {
+    var symbolUrl = GOD_SYMBOL[godName];
+    if (!symbolUrl) continue;
+
+    var cells = merged[godName];
+    var minRow = Infinity, maxRow = -1, minCol = Infinity, maxCol = -1;
+    cells.forEach(function(c) {
+      if (c[0] < minRow) minRow = c[0];
+      if (c[0] > maxRow) maxRow = c[0];
+      if (c[1] < minCol) minCol = c[1];
+      if (c[1] > maxCol) maxCol = c[1];
+    });
+
+    var overlay = document.createElement('div');
+    overlay.className = 'god-symbol-overlay';
+    overlay.style.gridRow = (minRow + 1) + ' / ' + (maxRow + 2);
+    overlay.style.gridColumn = (minCol + 1) + ' / ' + (maxCol + 2);
+    overlay.style.backgroundImage = 'url(' + symbolUrl + ')';
+    board.appendChild(overlay);
   }
 }
 
@@ -468,6 +543,19 @@ function selectTile(tile, el) {
   document.getElementById('info-points').textContent = tile.points + ' points';
   document.getElementById('info-name').textContent = tile.name;
   document.getElementById('info-desc').textContent = tile.description;
+
+  // God color + symbol on panel
+  var godColor = GOD_BG_COLOR[tile.god] || '#444';
+  panel.style.setProperty('--info-god-color', godColor);
+  panel.style.background = 'linear-gradient(135deg, ' + godColor + '33 0%, #1a1a2e 30%)';
+
+  var symbolImg = document.getElementById('info-god-symbol');
+  if (GOD_SYMBOL[tile.god]) {
+    symbolImg.src = GOD_SYMBOL[tile.god];
+    symbolImg.style.display = 'block';
+  } else {
+    symbolImg.style.display = 'none';
+  }
 
   const unlocksEl = document.getElementById('info-unlocks');
   if (tile.unlocks) {
