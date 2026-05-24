@@ -164,18 +164,18 @@ main {
 
 /* God Colors */
 .tile.god-guthix { background: #1e6b1e; }
-.tile.god-armadyl { background: #1a6b6b; }
-.tile.god-bandos { background: #7a2e1a; }
-.tile.god-saradomin { background: #1a3a7a; }
-.tile.god-saradomin-ascension { background: #2454a8; }
-.tile.god-seren { background: #1a5a6b; }
-.tile.god-seren-ascension { background: #2a7a8b; }
-.tile.god-zamorak { background: #8b1a1a; }
-.tile.god-zamorak-ascension { background: #ab2a2a; }
-.tile.god-zaros { background: #4a1a6b; }
-.tile.god-zaros-ascension { background: #6a3a8b; }
-.tile.god-tumeken { background: #8b6b1a; }
-.tile.god-ralos { background: #9b7b2a; }
+.tile.god-armadyl { background: #5080a0; }
+.tile.god-bandos { background: #5a4a1a; }
+.tile.god-saradomin { background: #2040a0; }
+.tile.god-saradomin-ascension { background: #3060c0; }
+.tile.god-seren { background: #20a0b0; }
+.tile.god-seren-ascension { background: #30b8c8; }
+.tile.god-zamorak { background: #a01020; }
+.tile.god-zamorak-ascension { background: #c02030; }
+.tile.god-zaros { background: #3a1060; }
+.tile.god-zaros-ascension { background: #5a2890; }
+.tile.god-tumeken { background: #c09020; }
+.tile.god-ralos { background: #d07020; }
 .tile.god-zamajohndamix { background: #5a3a2a; }
 
 /* Info Panel */
