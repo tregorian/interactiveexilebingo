@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BinGods 2026 — Those Exiles</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+  <header>
+    <div class="header-left"><span class="year">2026</span></div>
+    <div class="header-center">
+      <h1>BINGODS</h1>
+      <h2>LORD OF THE BOARD</h2>
+    </div>
+    <div class="header-right">THOSE<br>EXILES</div>
+  </header>
+
+  <main>
+    <div id="board" class="board"></div>
+  </main>
+
+  <div id="info-panel" class="info-panel hidden">
+    <button id="info-close" class="info-close">&times;</button>
+    <div class="info-content">
+      <div class="info-header">
+        <span id="info-god" class="info-god"></span>
+        <span id="info-points" class="info-points"></span>
+      </div>
+      <h3 id="info-name"></h3>
+      <p id="info-desc"></p>
+      <p id="info-unlocks" class="info-unlocks"></p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
