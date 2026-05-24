@@ -1,0 +1,43 @@
+{
+  "teams": [
+    {
+      "name": "Team Zaros",
+      "color": "#7b4fbf",
+      "captain": "ShadowLord99",
+      "members": [
+        "ShadowLord99",
+        "IronBtw",
+        "RuneScaper42",
+        "PrayFlicker",
+        "GuthixSleep",
+        "BossHunterX",
+        "SlayerKing",
+        "PetLuck",
+        "MaxCape_Jr",
+        "DropRateRNG",
+        "ClueChaser",
+        "SkillMaster"
+      ]
+    },
+    {
+      "name": "Team Saradomin",
+      "color": "#3a7bd5",
+      "captain": "HolyWarrior",
+      "members": [
+        "HolyWarrior",
+        "BlueKnight",
+        "PVM_Andy",
+        "RaidShadow",
+        "TobRunner",
+        "CoxEnjoyer",
+        "WildyPker",
+        "BarrowsBro",
+        "DKsGrinder",
+        "ZulrahMain",
+        "VorkiHunter",
+        "GauntletGod",
+        "InfernalCape"
+      ]
+    }
+  ]
+}

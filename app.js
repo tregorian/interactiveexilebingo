@@ -200,6 +200,7 @@ let allTiles = [];
 let tileElements = {}; // tileName → DOM element
 let selectedTile = null;
 let depGraph = {};
+let teamsData = null;
 
 async function init() {
   const response = await fetch(CSV_FILE);
@@ -223,6 +224,42 @@ async function init() {
   depGraph = buildDependencyGraph(allTiles);
   renderBoard();
   setupInfoPanel();
+
+  // Load teams + completions
+  try {
+    var teamsResp = await fetch('teams.json');
+    teamsData = await teamsResp.json();
+
+    var compResp = await fetch('completions.csv');
+    var compText = await compResp.text();
+    var compParsed = Papa.parse(compText, { header: true, skipEmptyLines: true });
+
+    // Build completions map: teamName → [{ tileName, points }]
+    var tilePointsMap = {};
+    allTiles.forEach(function(t) { tilePointsMap[t.name] = t.points; });
+
+    teamsData.teams.forEach(function(team) {
+      team.completedTiles = [];
+      team.points = 0;
+    });
+
+    compParsed.data.forEach(function(row) {
+      var tileName = (row['Tile Name'] || '').trim();
+      var teamName = (row['Team'] || '').trim();
+      if (!tileName || !teamName) return;
+
+      var team = teamsData.teams.filter(function(t) { return t.name === teamName; })[0];
+      if (!team) return;
+
+      team.completedTiles.push(tileName);
+      team.points += tilePointsMap[tileName] || 0;
+    });
+
+    renderTeams();
+    markCompletedTiles();
+  } catch (e) {
+    console.warn('Could not load teams/completions:', e);
+  }
 }
 
 function renderBoard() {
@@ -440,6 +477,55 @@ function selectTile(tile, el) {
     unlocksEl.style.display = 'none';
   }
 
+  // Requirements (which tiles unlock this god section)
+  var reqEl = document.getElementById('info-requirements');
+  reqEl.innerHTML = '';
+  var unlockers = depGraph.godUnlockedBy[tile.god];
+  if (unlockers && unlockers.length > 0) {
+    var label = document.createElement('span');
+    label.className = 'req-label';
+    label.textContent = 'Requires: ';
+    reqEl.appendChild(label);
+
+    unlockers.forEach(function(srcName) {
+      var btn = document.createElement('span');
+      btn.className = 'info-req-tile';
+      btn.textContent = srcName;
+      btn.addEventListener('click', function() {
+        var srcEl = tileElements[srcName];
+        var srcTile = allTiles.filter(function(t) { return t.name === srcName; })[0];
+        if (srcEl && srcTile) {
+          selectTile(srcTile, srcEl);
+          srcEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+      reqEl.appendChild(btn);
+    });
+    reqEl.style.display = 'block';
+  } else {
+    reqEl.style.display = 'none';
+  }
+
+  // Completion status
+  var compEl = document.getElementById('info-completion');
+  compEl.innerHTML = '';
+  compEl.className = 'info-completion';
+  if (teamsData && teamsData.teams) {
+    var completedBy = teamsData.teams.filter(function(t) {
+      return t.completedTiles && t.completedTiles.indexOf(tile.name) !== -1;
+    });
+    if (completedBy.length > 0) {
+      var text = 'Completed by: ';
+      compEl.innerHTML = text + completedBy.map(function(t) {
+        return '<span class="team-badge" style="background:' + t.color + '">' + t.name + '</span>';
+      }).join(' ');
+    } else {
+      compEl.className = 'info-completion info-completion-none';
+      compEl.textContent = 'Not yet completed';
+    }
+  }
+  compEl.style.display = 'block';
+
   panel.classList.remove('hidden');
 }
 
@@ -451,6 +537,103 @@ function setupInfoPanel() {
       el.classList.remove('dep-source', 'dep-target', 'dimmed', 'selected');
     });
   });
+}
+
+// === Teams ===
+
+function renderTeams() {
+  if (!teamsData || !teamsData.teams) return;
+  var panels = [
+    document.getElementById('team-panel-left'),
+    document.getElementById('team-panel-right'),
+  ];
+
+  teamsData.teams.forEach(function(team, idx) {
+    var panel = panels[idx];
+    if (!panel) return;
+
+    panel.style.borderColor = team.color;
+
+    // Header
+    var header = document.createElement('div');
+    header.className = 'team-header';
+    header.style.borderBottomColor = team.color;
+
+    var name = document.createElement('span');
+    name.className = 'team-name';
+    name.style.color = team.color;
+    name.textContent = team.name;
+    header.appendChild(name);
+
+    var pts = document.createElement('span');
+    pts.className = 'team-points';
+    pts.style.color = team.color;
+    pts.textContent = team.points + ' pts';
+    header.appendChild(pts);
+
+    panel.appendChild(header);
+
+    // Members
+    var membersTitle = document.createElement('div');
+    membersTitle.className = 'team-section-title';
+    membersTitle.textContent = 'Roster (' + team.members.length + ')';
+    panel.appendChild(membersTitle);
+
+    team.members.forEach(function(member) {
+      var el = document.createElement('div');
+      el.className = 'team-member';
+      if (member === team.captain) el.className += ' captain';
+      el.textContent = member;
+      panel.appendChild(el);
+    });
+
+    // Completed tiles
+    if (team.completedTiles && team.completedTiles.length > 0) {
+      var compTitle = document.createElement('div');
+      compTitle.className = 'team-section-title';
+      compTitle.textContent = 'Completed (' + team.completedTiles.length + ')';
+      panel.appendChild(compTitle);
+
+      team.completedTiles.forEach(function(tileName) {
+        var el = document.createElement('div');
+        el.className = 'completed-tile';
+        el.textContent = tileName;
+        el.style.borderLeft = '3px solid ' + team.color;
+        panel.appendChild(el);
+      });
+    }
+  });
+}
+
+function markCompletedTiles() {
+  if (!teamsData || !teamsData.teams) return;
+
+  // Build map: tileName → [team, team, ...]
+  var tileTeams = {};
+  teamsData.teams.forEach(function(team) {
+    if (!team.completedTiles) return;
+    team.completedTiles.forEach(function(tileName) {
+      if (!tileTeams[tileName]) tileTeams[tileName] = [];
+      tileTeams[tileName].push(team);
+    });
+  });
+
+  for (var tileName in tileTeams) {
+    var el = tileElements[tileName];
+    if (!el) continue;
+    var teams = tileTeams[tileName];
+
+    if (teams.length >= 2) {
+      el.classList.add('completed-both');
+      el.style.setProperty('--team-color-1', teams[0].color);
+      el.style.setProperty('--team-color-2', teams[1].color);
+      el.title = 'Completed by ' + teams[0].name + ' & ' + teams[1].name;
+    } else {
+      el.classList.add('completed-single');
+      el.style.setProperty('--team-color', teams[0].color);
+      el.title = 'Completed by ' + teams[0].name;
+    }
+  }
 }
 
 init();
