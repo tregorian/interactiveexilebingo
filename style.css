@@ -176,7 +176,9 @@ main {
 .tile.god-zaros-ascension { background: #5a2890; }
 .tile.god-tumeken { background: #c09020; }
 .tile.god-ralos { background: #d07020; }
-.tile.god-zamajohndamix { background: #5a3a2a; }
+.tile.god-zamajohndamix { background: #c0b8b0; }
+.tile.god-zamajohndamix .tile-name { color: #1a1a1a; text-shadow: none; }
+.tile.god-zamajohndamix .tile-points { color: #1a1a1a; background: rgba(255,255,255,0.4); }
 
 /* Info Panel */
 .info-panel {
