@@ -139,7 +139,7 @@ main {
 }
 
 .team-panel .team-member.captain::before {
-  content: '\u2655 ';
+  content: '\2655  ';
 }
 
 .team-panel .completed-tile {
@@ -448,6 +448,24 @@ main {
   color: #666 !important;
   font-weight: 400;
   font-style: italic;
+}
+
+/* Admin link */
+.admin-link {
+  position: fixed;
+  bottom: 8px;
+  right: 12px;
+  font-size: 0.7rem;
+  color: #555;
+  text-decoration: none;
+  z-index: 101;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: color 0.2s;
+}
+
+.admin-link:hover {
+  color: #aaa;
 }
 
 /* Responsive */

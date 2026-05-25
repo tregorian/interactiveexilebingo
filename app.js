@@ -1,3 +1,8 @@
+// === Supabase client (initialized in init()) ===
+var SUPABASE_URL = 'https://guopmuftxabughhnllol.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_eAo1MmVKKvz_hjsVQgJzfQ_62lCD-pT';
+var supabaseClient = null;
+
 // === God symbol URLs ===
 const GOD_SYMBOL = {
   'Guthix': 'https://oldschool.runescape.wiki/images/Guthix_symbol.png',
@@ -238,6 +243,17 @@ let depGraph = {};
 let teamsData = null;
 
 async function init() {
+  // Init Supabase (CDN is loaded by now)
+  try {
+    var sbLib = window.supabase;
+    if (sbLib && sbLib.createClient) {
+      supabaseClient = sbLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+    if (!supabaseClient) console.warn('Could not find Supabase createClient');
+  } catch (e) {
+    console.warn('Supabase init failed:', e);
+  }
+
   const response = await fetch(CSV_FILE);
   const csvText = await response.text();
 
@@ -260,47 +276,49 @@ async function init() {
   renderBoard();
   setupInfoPanel();
 
-  // Load teams + completions (only with ?dev=true)
-  var devMode = new URLSearchParams(window.location.search).get('dev') === 'true';
-  if (!devMode) {
-    document.getElementById('team-panel-left').style.display = 'none';
-    document.getElementById('team-panel-right').style.display = 'none';
+  // Load teams + completions
+  var loaded = false;
+
+  // Try Supabase first
+  if (supabaseClient) {
+    try {
+      var teamsRes = await supabaseClient.from('teams').select('*');
+      var compRes = await supabaseClient.from('completions').select('*');
+
+      if (!teamsRes.error && !compRes.error && teamsRes.data) {
+        teamsData = { teams: teamsRes.data.map(function(t) {
+          return { name: t.name, color: t.color, captain: t.captain, members: t.members || [] };
+        })};
+
+        var tilePointsMap = {};
+        allTiles.forEach(function(t) { tilePointsMap[t.name] = t.points; });
+
+        teamsData.teams.forEach(function(team) {
+          team.completedTiles = [];
+          team.points = 0;
+        });
+
+        compRes.data.forEach(function(row) {
+          var team = teamsData.teams.filter(function(t) { return t.name === row.team_name; })[0];
+          if (!team) return;
+          team.completedTiles.push(row.tile_name);
+          team.points += tilePointsMap[row.tile_name] || 0;
+        });
+
+        loaded = true;
+      }
+    } catch (e) {
+      console.warn('Supabase fetch failed, falling back to local files:', e);
+    }
   }
-  if (!devMode) return;
-  try {
-    var teamsResp = await fetch('teams.json');
-    teamsData = await teamsResp.json();
 
-    var compResp = await fetch('completions.csv');
-    var compText = await compResp.text();
-    var compParsed = Papa.parse(compText, { header: true, skipEmptyLines: true });
-
-    // Build completions map: teamName → [{ tileName, points }]
-    var tilePointsMap = {};
-    allTiles.forEach(function(t) { tilePointsMap[t.name] = t.points; });
-
-    teamsData.teams.forEach(function(team) {
-      team.completedTiles = [];
-      team.points = 0;
-    });
-
-    compParsed.data.forEach(function(row) {
-      var tileName = (row['Tile Name'] || '').trim();
-      var teamName = (row['Team'] || '').trim();
-      if (!tileName || !teamName) return;
-
-      var team = teamsData.teams.filter(function(t) { return t.name === teamName; })[0];
-      if (!team) return;
-
-      team.completedTiles.push(tileName);
-      team.points += tilePointsMap[tileName] || 0;
-    });
-
-    renderTeams();
-    markCompletedTiles();
-  } catch (e) {
-    console.warn('Could not load teams/completions:', e);
+  if (!loaded) {
+    console.warn('Could not load team data from Supabase');
+    return;
   }
+
+  renderTeams();
+  markCompletedTiles();
 }
 
 function renderBoard() {
@@ -724,4 +742,9 @@ function markCompletedTiles() {
   }
 }
 
-init();
+// Wait for DOM + all scripts to be ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
