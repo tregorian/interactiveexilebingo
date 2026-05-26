@@ -249,6 +249,38 @@ main {
   content: '\2655  ';
 }
 
+.team-panel .team-lms-points {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 0;
+  margin-top: 4px;
+  text-align: center;
+}
+
+.team-panel .in-progress-tile {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  color: #ccc;
+  padding: 2px 4px;
+  margin: 2px 0;
+  border-radius: 3px;
+  background: rgba(255, 140, 0, 0.08);
+  line-height: 1.3;
+}
+
+.team-panel .in-progress-tile .ip-name {
+  flex: 1;
+}
+
+.team-panel .in-progress-tile .ip-progress {
+  font-weight: 700;
+  color: #ff8c00;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
 .team-panel .completed-tile {
   font-size: 0.7rem;
   color: #aaa;
@@ -294,6 +326,35 @@ main {
   font-weight: 900;
   color: #ffd700;
   text-shadow: 0 0 6px #ffd700;
+}
+
+/* In-progress tile */
+.tile.in-progress {
+  box-shadow:
+    inset 0 0 0 2px var(--team-color),
+    0 0 6px rgba(255, 255, 255, 0.15);
+  opacity: 0.9;
+}
+
+.tile.in-progress::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--team-color);
+  opacity: 0.6;
+}
+
+.tile-progress-badge {
+  position: absolute;
+  bottom: 1px;
+  left: 3px;
+  font-size: 0.5rem;
+  font-weight: 900;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  z-index: 1;
 }
 
 /* Tile */
@@ -555,6 +616,56 @@ main {
   color: #666 !important;
   font-weight: 400;
   font-style: italic;
+}
+
+/* Sub-items checklist in info panel */
+.info-sub-team {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.info-sub-team-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.info-sub-progress {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #ff8c00;
+}
+
+.info-sub-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+}
+
+.info-sub-item {
+  font-size: 0.8rem;
+  color: #888;
+  padding: 1px 0;
+}
+
+.info-sub-item.done {
+  color: #6f6;
+}
+
+.info-sub-check {
+  font-weight: 700;
+  margin-right: 2px;
+}
+
+.info-sub-item.done .info-sub-check {
+  color: #6f6;
+}
+
+.info-sub-item:not(.done) .info-sub-check {
+  color: #a01020;
 }
 
 /* Admin link */

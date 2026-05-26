@@ -162,25 +162,79 @@ export function selectTile(tile, el) {
     reqEl.style.display = 'none';
   }
 
-  // Completion status
+  // Completion status + sub-items checklist
   var compEl = document.getElementById('info-completion');
   compEl.innerHTML = '';
   compEl.className = 'info-completion';
+
   if (teamsDataRef && teamsDataRef.teams) {
-    var completedBy = teamsDataRef.teams.filter(function(t) {
-      return t.completedTiles && t.completedTiles.indexOf(tile.name) !== -1;
-    });
-    if (completedBy.length > 0) {
-      var text = 'Completed by: ';
-      compEl.innerHTML = text + completedBy.map(function(t) {
-        return '<span class="team-badge" style="background:' + t.color + '">' + t.name + '</span>';
-      }).join(' ');
+    var tileSubItems = (teamsDataRef.tileSubItems || {})[tile.name];
+    var completionDetails = teamsDataRef.completionDetails || {};
+    var tileComps = completionDetails[tile.name] || {};
+
+    if (tileSubItems && tileSubItems.length > 0) {
+      // Multi-item tile: show checklist per team
+      teamsDataRef.teams.forEach(function(team) {
+        var teamComps = tileComps[team.name] || [];
+        var doneCount = 0;
+        tileSubItems.forEach(function(s) {
+          if (teamComps.indexOf(s) !== -1) doneCount++;
+        });
+
+        var teamBlock = document.createElement('div');
+        teamBlock.className = 'info-sub-team';
+
+        var teamHeader = document.createElement('div');
+        teamHeader.className = 'info-sub-team-header';
+        teamHeader.innerHTML = '<span class="team-badge" style="background:' + team.color + '">' +
+          escapeHtml(team.name) + '</span> ' +
+          '<span class="info-sub-progress">' + doneCount + '/' + tileSubItems.length + '</span>';
+        teamBlock.appendChild(teamHeader);
+
+        var list = document.createElement('div');
+        list.className = 'info-sub-list';
+
+        tileSubItems.forEach(function(subItem) {
+          var done = teamComps.indexOf(subItem) !== -1;
+          var item = document.createElement('div');
+          item.className = 'info-sub-item' + (done ? ' done' : '');
+
+          // Special display for LMS sub-item
+          if (subItem === '50 LMS Points') {
+            var lmsText = subItem + ' (' + (team.lmsPoints || 0) + '/50)';
+            item.innerHTML = '<span class="info-sub-check">' + (done ? '\u2713' : '\u2717') + '</span> ' + escapeHtml(lmsText);
+          } else {
+            item.innerHTML = '<span class="info-sub-check">' + (done ? '\u2713' : '\u2717') + '</span> ' + escapeHtml(subItem);
+          }
+          list.appendChild(item);
+        });
+
+        teamBlock.appendChild(list);
+        compEl.appendChild(teamBlock);
+      });
     } else {
-      compEl.className = 'info-completion info-completion-none';
-      compEl.textContent = 'Not yet completed';
+      // Single-item tile: show completed-by badges (original behavior)
+      var completedBy = teamsDataRef.teams.filter(function(t) {
+        return t.completedTiles && t.completedTiles.indexOf(tile.name) !== -1;
+      });
+      if (completedBy.length > 0) {
+        var text = 'Completed by: ';
+        compEl.innerHTML = text + completedBy.map(function(t) {
+          return '<span class="team-badge" style="background:' + t.color + '">' + t.name + '</span>';
+        }).join(' ');
+      } else {
+        compEl.className = 'info-completion info-completion-none';
+        compEl.textContent = 'Not yet completed';
+      }
     }
   }
   compEl.style.display = 'block';
 
   panel.classList.remove('hidden');
+}
+
+function escapeHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
 }

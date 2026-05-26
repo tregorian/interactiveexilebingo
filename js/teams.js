@@ -49,6 +49,32 @@ export function renderTeams(teamsData) {
       panel.appendChild(el);
     });
 
+    // LMS Points
+    if (typeof team.lmsPoints === 'number') {
+      var lmsEl = document.createElement('div');
+      lmsEl.className = 'team-lms-points';
+      lmsEl.style.color = team.lmsPoints >= 50 ? '#6f6' : '#ff8c00';
+      lmsEl.textContent = 'LMS Points: ' + team.lmsPoints + '/50';
+      panel.appendChild(lmsEl);
+    }
+
+    // In-progress tiles
+    if (team.inProgressTiles && team.inProgressTiles.length > 0) {
+      var progTitle = document.createElement('div');
+      progTitle.className = 'team-section-title';
+      progTitle.textContent = 'In Progress (' + team.inProgressTiles.length + ')';
+      panel.appendChild(progTitle);
+
+      team.inProgressTiles.forEach(function(prog) {
+        var el = document.createElement('div');
+        el.className = 'in-progress-tile';
+        el.style.borderLeft = '3px solid ' + team.color;
+        el.innerHTML = '<span class="ip-name">' + escapeHtml(prog.name) + '</span>' +
+          '<span class="ip-progress">' + prog.done + '/' + prog.total + '</span>';
+        panel.appendChild(el);
+      });
+    }
+
     // Completed tiles
     if (team.completedTiles && team.completedTiles.length > 0) {
       var compTitle = document.createElement('div');
@@ -67,9 +93,19 @@ export function renderTeams(teamsData) {
   });
 }
 
+function escapeHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
 export function markCompletedTiles(teamsData) {
   if (!teamsData || !teamsData.teams) return;
 
+  var tileSubItems = teamsData.tileSubItems || {};
+  var completionDetails = teamsData.completionDetails || {};
+
+  // Track fully completed tiles per team (existing logic)
   var tileTeams = {};
   teamsData.teams.forEach(function(team) {
     if (!team.completedTiles) return;
@@ -79,6 +115,17 @@ export function markCompletedTiles(teamsData) {
     });
   });
 
+  // Track in-progress tiles per team
+  var tileInProgress = {};
+  teamsData.teams.forEach(function(team) {
+    if (!team.inProgressTiles) return;
+    team.inProgressTiles.forEach(function(prog) {
+      if (!tileInProgress[prog.name]) tileInProgress[prog.name] = [];
+      tileInProgress[prog.name].push({ team: team, done: prog.done, total: prog.total });
+    });
+  });
+
+  // Apply completed styles
   for (var tileName in tileTeams) {
     var el = tileElements[tileName];
     if (!el) continue;
@@ -94,5 +141,38 @@ export function markCompletedTiles(teamsData) {
       el.style.setProperty('--team-color', teams[0].color);
       el.title = 'Completed by ' + teams[0].name;
     }
+  }
+
+  // Apply in-progress styles
+  for (var ipName in tileInProgress) {
+    if (tileTeams[ipName]) continue; // already fully completed by someone, skip
+    var el = tileElements[ipName];
+    if (!el) continue;
+    var entries = tileInProgress[ipName];
+
+    // Show progress badge for the team furthest along
+    var best = entries[0];
+    for (var i = 1; i < entries.length; i++) {
+      if (entries[i].done > best.done) best = entries[i];
+    }
+
+    el.classList.add('in-progress');
+    el.style.setProperty('--team-color', best.team.color);
+    el.title = entries.map(function(e) {
+      return e.team.name + ': ' + e.done + '/' + e.total;
+    }).join(' | ');
+
+    // Add progress badge
+    var badge = document.createElement('span');
+    badge.className = 'tile-progress-badge';
+
+    if (entries.length >= 2) {
+      badge.textContent = entries[0].done + '|' + entries[1].done + '/' + entries[0].total;
+      badge.style.color = '#ffd700';
+    } else {
+      badge.textContent = best.done + '/' + best.total;
+      badge.style.color = best.team.color;
+    }
+    el.appendChild(badge);
   }
 }
