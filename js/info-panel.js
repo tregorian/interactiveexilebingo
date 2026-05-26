@@ -13,6 +13,7 @@ export function initInfoPanel({ allTiles, depGraph, teamsData }) {
 
   document.getElementById('info-close').addEventListener('click', () => {
     document.getElementById('info-panel').classList.add('hidden');
+    document.querySelector('main').style.paddingBottom = '';
     selectedTile = null;
     document.querySelectorAll('.tile').forEach(el => {
       el.classList.remove('dep-source', 'dep-target', 'dimmed', 'selected');
@@ -66,6 +67,7 @@ export function selectTile(tile, el) {
     selectedTile = null;
     el.classList.remove('selected');
     panel.classList.add('hidden');
+    document.querySelector('main').style.paddingBottom = '';
     document.querySelectorAll('.tile').forEach(e => {
       e.classList.remove('dep-source', 'dep-target', 'dimmed', 'selected');
     });
@@ -204,9 +206,11 @@ export function selectTile(tile, el) {
       // Multi-item tile: show checklist per team
       teamsDataRef.teams.forEach(function(team) {
         var teamComps = tileComps[team.name] || [];
+        var compMap = {};
+        teamComps.forEach(function(c) { compMap[c.sub_item] = c; });
         var doneCount = 0;
         tileSubItems.forEach(function(s) {
-          if (teamComps.indexOf(s) !== -1) doneCount++;
+          if (compMap[s]) doneCount++;
         });
 
         var teamBlock = document.createElement('div');
@@ -223,16 +227,19 @@ export function selectTile(tile, el) {
         list.className = 'info-sub-list';
 
         tileSubItems.forEach(function(subItem) {
-          var done = teamComps.indexOf(subItem) !== -1;
+          var comp = compMap[subItem];
+          var done = !!comp;
           var item = document.createElement('div');
           item.className = 'info-sub-item' + (done ? ' done' : '');
 
-          // Special display for LMS sub-item
+          var check = '<span class="info-sub-check">' + (done ? '\u2713' : '\u2717') + '</span> ';
           if (subItem === '50 LMS Points') {
             var lmsText = subItem + ' (' + (team.lmsPoints || 0) + '/50)';
-            item.innerHTML = '<span class="info-sub-check">' + (done ? '\u2713' : '\u2717') + '</span> ' + escapeHtml(lmsText);
+            item.innerHTML = check + escapeHtml(lmsText);
+          } else if (done && comp.note) {
+            item.innerHTML = check + escapeHtml(subItem) + ' <span class="info-sub-note">(' + escapeHtml(comp.note) + ')</span>';
           } else {
-            item.innerHTML = '<span class="info-sub-check">' + (done ? '\u2713' : '\u2717') + '</span> ' + escapeHtml(subItem);
+            item.innerHTML = check + escapeHtml(subItem);
           }
           list.appendChild(item);
         });
@@ -259,6 +266,20 @@ export function selectTile(tile, el) {
   compEl.style.display = 'block';
 
   panel.classList.remove('hidden');
+
+  // Adjust main padding to prevent panel from covering the board
+  requestAnimationFrame(function() {
+    var panelHeight = panel.offsetHeight;
+    document.querySelector('main').style.paddingBottom = (panelHeight + 16) + 'px';
+    // Scroll the selected tile into view above the panel
+    if (el) {
+      var tileRect = el.getBoundingClientRect();
+      var panelTop = window.innerHeight - panelHeight;
+      if (tileRect.bottom > panelTop) {
+        window.scrollBy({ top: tileRect.bottom - panelTop + 20, behavior: 'smooth' });
+      }
+    }
+  });
 }
 
 function escapeHtml(s) {

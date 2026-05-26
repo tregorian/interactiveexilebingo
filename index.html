@@ -19,6 +19,14 @@
     <div class="header-right"><img src="exiles_icon.webp" alt="Those Exiles" class="exiles-logo"></div>
   </header>
 
+  <div class="codeword-bar">CODEWORD: BINGODS2026</div>
+
+  <div class="event-bar">
+    <span id="event-dates"></span>
+    <span class="event-separator">|</span>
+    <span id="event-countdown"></span>
+  </div>
+
   <div class="wom-link">
     <img src="wom.png" alt="WOM" class="wom-icon">
     <a href="https://wiseoldman.net/competitions/89749" target="_blank" rel="noopener">Wise Old Man Competition</a>
@@ -28,6 +36,51 @@
   <div class="page-help-row">
     <button id="page-help-btn" class="wom-help-btn" title="How to use this page">?</button>
   </div>
+
+  <script>
+  (function() {
+    // June 6, 2026 10:00 AM EDT (UTC-4)
+    var startDate = new Date('2026-06-06T14:00:00Z');
+    // June 23, 2026 10:00 AM EDT (UTC-4)
+    var endDate = new Date('2026-06-23T14:00:00Z');
+
+    // Format dates in user's locale
+    var dateOpts = { month: 'long', day: 'numeric' };
+    var timeOpts = { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' };
+    var startStr = startDate.toLocaleDateString(undefined, dateOpts);
+    var endStr = endDate.toLocaleDateString(undefined, dateOpts) + ', ' + endDate.getFullYear();
+    var timeStr = startDate.toLocaleTimeString(undefined, timeOpts);
+    document.getElementById('event-dates').textContent = startStr + ', ' + timeStr + ' \u2014 ' + endStr + ', ' + timeStr;
+
+    // Countdown
+    function updateCountdown() {
+      var now = new Date();
+      var diff, label;
+      if (now < startDate) {
+        diff = startDate - now;
+        label = 'Starts in ';
+      } else if (now < endDate) {
+        diff = endDate - now;
+        label = 'Ends in ';
+      } else {
+        document.getElementById('event-countdown').textContent = 'Event ended';
+        return;
+      }
+      var days = Math.floor(diff / 86400000);
+      var hours = Math.floor((diff % 86400000) / 3600000);
+      var mins = Math.floor((diff % 3600000) / 60000);
+      var secs = Math.floor((diff % 60000) / 1000);
+      var parts = [];
+      if (days > 0) parts.push(days + 'd');
+      parts.push(hours + 'h');
+      parts.push(mins + 'm');
+      parts.push(secs + 's');
+      document.getElementById('event-countdown').textContent = label + parts.join(' ');
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  })();
+  </script>
 
   <dialog id="page-help-dialog" class="wom-dialog">
     <h3>How to Use BinGods</h3>

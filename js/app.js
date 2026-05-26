@@ -107,17 +107,15 @@ async function init() {
           if (t.counter) tileCountersMap[t.name] = t.counter;
         });
 
-        // Build completion details: { tileName: { teamName: ['sub1', 'sub2'] } }
+        // Build completion details: { tileName: { teamName: [{sub_item, note}, ...] } }
         var completionDetails = {};
         compRes.data.forEach(function(row) {
           if (!completionDetails[row.tile_name]) completionDetails[row.tile_name] = {};
           if (!completionDetails[row.tile_name][row.team_name]) completionDetails[row.tile_name][row.team_name] = [];
-          if (row.sub_item) {
-            completionDetails[row.tile_name][row.team_name].push(row.sub_item);
-          } else {
-            // Legacy record (no sub_item) — marks full tile complete for tiles without sub-items
-            completionDetails[row.tile_name][row.team_name].push('__complete__');
-          }
+          completionDetails[row.tile_name][row.team_name].push({
+            sub_item: row.sub_item || '__complete__',
+            note: row.note || '',
+          });
         });
 
         // Inject LMS auto-completions
@@ -126,8 +124,9 @@ async function init() {
             var kpn = "Krystilia's Phone Number";
             if (!completionDetails[kpn]) completionDetails[kpn] = {};
             if (!completionDetails[kpn][team.name]) completionDetails[kpn][team.name] = [];
-            if (completionDetails[kpn][team.name].indexOf('50 LMS Points') === -1) {
-              completionDetails[kpn][team.name].push('50 LMS Points');
+            var hasLms = completionDetails[kpn][team.name].some(function(c) { return c.sub_item === '50 LMS Points'; });
+            if (!hasLms) {
+              completionDetails[kpn][team.name].push({ sub_item: '50 LMS Points', note: '' });
             }
           }
         });
@@ -166,8 +165,9 @@ async function init() {
             } else if (subs) {
               // Multi-item tile: count how many sub-items are done
               var done = 0;
+              var compNames = teamComps.map(function(c) { return c.sub_item; });
               subs.forEach(function(s) {
-                if (teamComps.indexOf(s) !== -1) done++;
+                if (compNames.indexOf(s) !== -1) done++;
               });
               if (done >= subs.length) {
                 team.completedTiles.push(tile.name);
