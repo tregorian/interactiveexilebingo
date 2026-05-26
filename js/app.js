@@ -1,5 +1,5 @@
 import { buildDependencyGraph } from './layout.js';
-import { renderBoard } from './board.js';
+import { renderBoard, tileElements } from './board.js';
 import { initInfoPanel, highlightDeps, clearHighlights, selectTile } from './info-panel.js';
 import { renderTeams, markCompletedTiles } from './teams.js';
 
@@ -209,6 +209,53 @@ async function init() {
   initInfoPanel({ allTiles, depGraph, teamsData });
   renderTeams(teamsData);
   markCompletedTiles(teamsData);
+
+  // Tile search
+  var searchInput = document.getElementById('tile-search');
+  var searchCount = document.getElementById('search-count');
+  var searchTimeout = null;
+  searchInput.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(function() {
+      var query = searchInput.value.trim().toLowerCase();
+      // Clear previous search highlights
+      document.querySelectorAll('.tile').forEach(function(el) {
+        el.classList.remove('search-match', 'search-dimmed');
+      });
+      searchCount.textContent = '';
+
+      if (!query || query.length < 2) return;
+
+      var matches = 0;
+      allTiles.forEach(function(tile) {
+        var el = tileElements[tile.name];
+        if (!el) return;
+        var haystack = (tile.name + ' ' + tile.description + ' ' + tile.god).toLowerCase();
+        if (haystack.indexOf(query) !== -1) {
+          el.classList.add('search-match');
+          matches++;
+        } else {
+          el.classList.add('search-dimmed');
+        }
+      });
+      if (matches === 0) {
+        document.querySelectorAll('.tile').forEach(function(el) {
+          el.classList.add('search-dimmed');
+        });
+      }
+      searchCount.textContent = matches + ' match' + (matches !== 1 ? 'es' : '');
+    }, 200);
+  });
+  // Clear on Escape
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      searchInput.value = '';
+      searchCount.textContent = '';
+      document.querySelectorAll('.tile').forEach(function(el) {
+        el.classList.remove('search-match', 'search-dimmed');
+      });
+    }
+  });
 }
 
 // Wait for DOM + all scripts to be ready

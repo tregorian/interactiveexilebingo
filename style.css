@@ -114,6 +114,54 @@ header {
   color: #ffd700;
   text-decoration: underline;
 }
+/* Tile search */
+.search-bar {
+  position: relative;
+  text-align: center;
+  padding: 4px 0 6px;
+}
+
+.search-bar input {
+  width: 280px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-size: 0.8rem;
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: #ffd700;
+}
+
+.search-bar input::placeholder {
+  color: #666;
+}
+
+.search-count {
+  position: absolute;
+  left: calc(50% + 150px);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  color: #ff8c00;
+}
+
+.tile.search-match {
+  border-color: #ffd700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  filter: brightness(1.2);
+  z-index: 5;
+}
+
+.tile.search-dimmed {
+  opacity: 0.25;
+  box-shadow: none !important;
+  filter: brightness(0.5) !important;
+}
+
 .page-help-row {
   text-align: center;
   padding: 2px 0 6px;
