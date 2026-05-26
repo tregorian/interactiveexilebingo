@@ -794,6 +794,31 @@ main {
   color: #6f6;
 }
 
+/* Connector line from panel to board tile */
+.connector-svg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 50;
+  display: none;
+}
+
+.tile.connector-highlight {
+  border-color: var(--connector-color, #fff);
+  box-shadow: 0 0 12px var(--connector-color, #fff);
+  transform: scale(1.08);
+  z-index: 10;
+  filter: brightness(1.3);
+}
+
+.team-panel .in-progress-tile,
+.team-panel .completed-tile {
+  cursor: pointer;
+}
+
 /* Admin link */
 .admin-link {
   position: fixed;

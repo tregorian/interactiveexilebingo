@@ -1,5 +1,70 @@
 import { tileElements } from './board.js';
 
+// SVG connector line
+var connectorSvg = null;
+function ensureConnectorSvg() {
+  if (connectorSvg) return connectorSvg;
+  connectorSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  connectorSvg.setAttribute('class', 'connector-svg');
+  document.body.appendChild(connectorSvg);
+  return connectorSvg;
+}
+
+function showConnector(sourceEl, tileName, color) {
+  var targetEl = tileElements[tileName];
+  if (!targetEl) return;
+
+  var svg = ensureConnectorSvg();
+  svg.style.display = 'block';
+  svg.innerHTML = '';
+
+  var srcRect = sourceEl.getBoundingClientRect();
+  var tgtRect = targetEl.getBoundingClientRect();
+
+  var sx = srcRect.left < tgtRect.left ? srcRect.right : srcRect.left;
+  var sy = srcRect.top + srcRect.height / 2;
+  var tx = tgtRect.left + tgtRect.width / 2;
+  var ty = tgtRect.top + tgtRect.height / 2;
+
+  var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', sx);
+  line.setAttribute('y1', sy);
+  line.setAttribute('x2', tx);
+  line.setAttribute('y2', ty);
+  line.setAttribute('stroke', color);
+  line.setAttribute('stroke-width', '2');
+  line.setAttribute('stroke-dasharray', '6,4');
+  line.setAttribute('opacity', '0.7');
+  svg.appendChild(line);
+
+  // Dot on the board tile
+  var dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  dot.setAttribute('cx', tx);
+  dot.setAttribute('cy', ty);
+  dot.setAttribute('r', '4');
+  dot.setAttribute('fill', color);
+  dot.setAttribute('opacity', '0.9');
+  svg.appendChild(dot);
+
+  targetEl.classList.add('connector-highlight');
+  targetEl.style.setProperty('--connector-color', color);
+}
+
+function hideConnector() {
+  if (connectorSvg) {
+    connectorSvg.style.display = 'none';
+    connectorSvg.innerHTML = '';
+  }
+  document.querySelectorAll('.connector-highlight').forEach(function(el) {
+    el.classList.remove('connector-highlight');
+  });
+}
+
+function addTileHover(el, tileName, color) {
+  el.addEventListener('mouseenter', function() { showConnector(el, tileName, color); });
+  el.addEventListener('mouseleave', hideConnector);
+}
+
 export function renderTeams(teamsData) {
   if (!teamsData || !teamsData.teams) return;
   var panels = [
@@ -80,6 +145,7 @@ export function renderTeams(teamsData) {
         var totalStr = prog.format ? fmt(prog.total, prog.format) : '' + prog.total;
         el.innerHTML = '<span class="ip-name">' + escapeHtml(prog.name) + '</span>' +
           '<span class="ip-progress">' + doneStr + '/' + totalStr + '</span>';
+        addTileHover(el, prog.name, team.color);
         panel.appendChild(el);
       });
     }
@@ -96,6 +162,7 @@ export function renderTeams(teamsData) {
         el.className = 'completed-tile';
         el.textContent = tileName;
         el.style.borderLeft = '3px solid ' + team.color;
+        addTileHover(el, tileName, team.color);
         panel.appendChild(el);
       });
     }
