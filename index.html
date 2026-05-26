@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BinGods 2026 — Those Exiles</title>
+  <link rel="icon" type="image/webp" href="exiles_icon.webp">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -17,6 +18,33 @@
     </div>
     <div class="header-right"><img src="exiles_icon.webp" alt="Those Exiles" class="exiles-logo"></div>
   </header>
+
+  <div class="wom-link">
+    <img src="wom.png" alt="WOM" class="wom-icon">
+    <a href="https://wiseoldman.net/competitions/89749" target="_blank" rel="noopener">Wise Old Man Competition</a>
+    <img src="wom.png" alt="WOM" class="wom-icon">
+  </div>
+
+  <div class="page-help-row">
+    <button id="page-help-btn" class="wom-help-btn" title="How to use this page">?</button>
+  </div>
+
+  <dialog id="page-help-dialog" class="wom-dialog">
+    <h3>How to Use BinGods</h3>
+    <ul>
+      <li><strong>The Board</strong> — Each tile is a bingo challenge. Tiles glow in a team's color when completed. Multiple teams can complete the same tile.</li>
+      <li><strong>Click a Tile</strong> — Opens a detail panel showing the challenge description, requirements, point value, and which teams have completed it.</li>
+      <li><strong>Team Panels</strong> — The side panels show each team's score and members. The captain is listed first.</li>
+      <li><strong>Unlocking God Tiles</strong> — The board has tiers of god tiles. To unlock the next tier, you must complete the adjacent lock tiles. Click a lock tile to see which tiles are required to unlock it, and click a god tile to see which tiles it unlocks in the next tier.</li>
+      <li><strong>Wise Old Man Link</strong> — Opens the WOM competition tracker for live XP gains.</li>
+    </ul>
+    <h4>WOM Competition Tips</h4>
+    <ul>
+      <li>To preview different metrics, click the <strong>three dots menu (…)</strong> then select <strong>"Preview as…"</strong></li>
+    </ul>
+    <img src="WOM_helper1.png" alt="How to preview different metrics" class="wom-helper-img">
+    <button id="page-help-close" class="wom-dialog-close">Got it</button>
+  </dialog>
 
   <main>
     <div id="team-panel-left" class="team-panel team-panel-left"></div>

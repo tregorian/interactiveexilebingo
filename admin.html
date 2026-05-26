@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BinGods Admin</title>
+  <link rel="icon" type="image/webp" href="exiles_icon.webp">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -191,11 +192,16 @@ async function loadTeams() {
     btn.addEventListener('click', async function() {
       var id = parseInt(this.dataset.id);
       var card = this.closest('.team-card');
+      var captain = card.querySelector('[data-field="captain"]').value.trim();
+      var members = card.querySelector('[data-field="members"]').value.split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+      if (captain && members.indexOf(captain) === -1) {
+        members.unshift(captain);
+      }
       var data = {
         name: card.querySelector('[data-field="name"]').value,
         color: card.querySelector('[data-field="color"]').value,
-        captain: card.querySelector('[data-field="captain"]').value,
-        members: card.querySelector('[data-field="members"]').value.split('\n').map(function(s) { return s.trim(); }).filter(Boolean),
+        captain: captain,
+        members: members,
       };
       var res = await sb.from('teams').update(data).eq('id', id);
       if (res.error) { alert('Error: ' + res.error.message); }

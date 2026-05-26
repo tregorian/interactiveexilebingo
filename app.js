@@ -1,3 +1,14 @@
+// === Page help dialog ===
+document.getElementById('page-help-btn').addEventListener('click', function() {
+  document.getElementById('page-help-dialog').showModal();
+});
+document.getElementById('page-help-close').addEventListener('click', function() {
+  document.getElementById('page-help-dialog').close();
+});
+document.getElementById('page-help-dialog').addEventListener('click', function(e) {
+  if (e.target === this) this.close();
+});
+
 // === Supabase client (initialized in init()) ===
 var SUPABASE_URL = 'https://guopmuftxabughhnllol.supabase.co';
 var SUPABASE_ANON_KEY = 'sb_publishable_eAo1MmVKKvz_hjsVQgJzfQ_62lCD-pT';
@@ -686,10 +697,13 @@ function renderTeams() {
     panel.appendChild(membersTitle);
 
     team.members.forEach(function(member) {
-      var el = document.createElement('div');
+      var el = document.createElement('a');
       el.className = 'team-member';
       if (member === team.captain) el.className += ' captain';
       el.textContent = member;
+      el.href = 'https://wiseoldman.net/players/' + encodeURIComponent(member) + '/gained';
+      el.target = '_blank';
+      el.rel = 'noopener';
       panel.appendChild(el);
     });
 
