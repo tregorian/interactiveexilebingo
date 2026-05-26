@@ -21,6 +21,15 @@ var supabaseClient = null;
 
 const CSV_FILE = 'ThoseExiles 2026 bingo clarifications - TileClarifications.csv';
 
+function formatCounterValue(val, format) {
+  if (format === 'xp' || format === 'gp') {
+    if (val >= 1000000) return (val / 1000000).toFixed(1).replace(/\.0$/, '') + 'm';
+    if (val >= 1000) return Math.floor(val / 1000) + 'k';
+    return '' + val;
+  }
+  return '' + val;
+}
+
 async function init() {
   // Init Supabase
   try {
@@ -33,12 +42,14 @@ async function init() {
     console.warn('Supabase init failed:', e);
   }
 
-  // Fetch CSV and sub-items map in parallel
+  // Fetch CSV, sub-items map, and counters config in parallel
   var csvPromise = fetch(CSV_FILE).then(function(r) { return r.text(); });
   var subItemsPromise = fetch('tile-subitems.json').then(function(r) { return r.json(); }).catch(function() { return {}; });
+  var countersPromise = fetch('tile-counters.json').then(function(r) { return r.json(); }).catch(function() { return {}; });
 
   var csvText = await csvPromise;
   var tileSubItems = await subItemsPromise;
+  var tileCounters = await countersPromise;
 
   const parsed = Papa.parse(csvText, {
     header: true,
@@ -56,6 +67,7 @@ async function init() {
         points: parseInt(row['Points']) || 0,
         unlocks: (row['Unlocks'] || '').trim().replace(/Ascenscion/g, 'Ascension'),
         subItems: tileSubItems[name] || [],
+        counter: tileCounters[name] || null,
       };
     });
 
@@ -82,14 +94,17 @@ async function init() {
           return {
             name: t.name, color: t.color, captain: t.captain,
             members: t.members || [], lmsPoints: t.lms_points || 0,
+            counters: t.counters || {},
           };
         })};
 
         var tilePointsMap = {};
         var tileSubItemsMap = {};
+        var tileCountersMap = {};
         allTiles.forEach(function(t) {
           tilePointsMap[t.name] = t.points;
           if (t.subItems.length > 0) tileSubItemsMap[t.name] = t.subItems;
+          if (t.counter) tileCountersMap[t.name] = t.counter;
         });
 
         // Build completion details: { tileName: { teamName: ['sub1', 'sub2'] } }
@@ -120,6 +135,8 @@ async function init() {
         // Store on teamsData for info panel / teams display
         teamsData.completionDetails = completionDetails;
         teamsData.tileSubItems = tileSubItemsMap;
+        teamsData.tileCounters = tileCountersMap;
+        teamsData.formatCounterValue = formatCounterValue;
 
         // Compute per-team completed / in-progress tiles
         teamsData.teams.forEach(function(team) {
@@ -130,8 +147,23 @@ async function init() {
           allTiles.forEach(function(tile) {
             var teamComps = (completionDetails[tile.name] || {})[team.name] || [];
             var subs = tileSubItemsMap[tile.name];
+            var counter = tileCountersMap[tile.name];
 
-            if (subs) {
+            if (counter) {
+              // Counter-based (team effort) tile
+              var val = team.counters[counter.key] || 0;
+              if (val >= counter.target) {
+                team.completedTiles.push(tile.name);
+                team.points += tile.points;
+              } else if (val > 0) {
+                team.inProgressTiles.push({
+                  name: tile.name,
+                  done: val,
+                  total: counter.target,
+                  format: counter.format,
+                });
+              }
+            } else if (subs) {
               // Multi-item tile: count how many sub-items are done
               var done = 0;
               subs.forEach(function(s) {

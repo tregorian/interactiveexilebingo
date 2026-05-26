@@ -12,6 +12,7 @@
     body { background: #0d0b0a; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 24px; }
     h1 { font-size: 1.5rem; margin-bottom: 8px; }
     h2 { font-size: 1.1rem; margin: 20px 0 8px; color: #ffd700; }
+    h3 { font-size: 0.95rem; color: #ffd700; margin-bottom: 6px; }
     a { color: #ff8c00; }
 
     .login-box, .admin-box { max-width: 700px; margin: 0 auto; }
@@ -89,34 +90,59 @@
     .sub-item-row.done { color: #6f6; }
     .sub-item-row:not(.done) { color: #ccc; }
     .sub-item-lms {
+      font-size: 0.8rem;
+      color: #ff8c00;
+      margin-left: 4px;
+    }
+
+    /* Counter controls */
+    .counter-row {
       display: flex;
       align-items: center;
       gap: 6px;
+      margin: 4px 0;
+      font-size: 0.82rem;
+    }
+    .counter-row label {
+      min-width: 130px;
       font-size: 0.8rem;
-      color: #ff8c00;
+      color: #aaa;
     }
-
-    /* LMS controls in team cards */
-    .lms-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 8px 0;
-    }
-    .lms-row label { min-width: 80px; font-size: 0.85rem; color: #aaa; }
-    .lms-row .lms-value {
-      font-size: 1rem;
-      font-weight: 700;
-      min-width: 30px;
-      text-align: center;
-    }
-    .lms-btn {
+    .counter-btn {
       width: 28px;
-      height: 28px;
+      height: 24px;
       padding: 0;
-      font-size: 1rem;
+      font-size: 0.8rem;
       line-height: 1;
       text-align: center;
+      min-width: 28px;
+    }
+    .counter-btn.wide {
+      width: auto;
+      padding: 0 6px;
+      font-size: 0.7rem;
+    }
+    .counter-value {
+      font-size: 0.85rem;
+      font-weight: 700;
+      min-width: 45px;
+      text-align: center;
+    }
+    .counter-input {
+      width: 70px;
+      padding: 3px 6px;
+      font-size: 0.8rem;
+      text-align: center;
+    }
+    .counters-section {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #333;
+    }
+    .counters-section h4 {
+      font-size: 0.8rem;
+      color: #ffd700;
+      margin-bottom: 6px;
     }
   </style>
 </head>
@@ -171,8 +197,18 @@ var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 var allTileNames = [];
 var tileSubItems = {};
+var tileCounters = {};
 var teamsCache = [];
 var completionsCache = [];
+
+function fmtVal(val, format) {
+  if (format === 'xp' || format === 'gp') {
+    if (val >= 1000000) return (val / 1000000).toFixed(1).replace(/\.0$/, '') + 'm';
+    if (val >= 1000) return Math.floor(val / 1000) + 'k';
+    return '' + val;
+  }
+  return '' + val;
+}
 
 // === Auth ===
 document.getElementById('login-btn').addEventListener('click', async function() {
@@ -195,7 +231,6 @@ document.getElementById('logout-btn').addEventListener('click', async function()
   document.getElementById('login-section').style.display = 'block';
 });
 
-// Check existing session
 sb.auth.getSession().then(function(res) {
   if (res.data.session) {
     showAdmin(res.data.session.user);
@@ -208,6 +243,7 @@ async function showAdmin(user) {
   document.getElementById('user-info').textContent = 'Logged in as ' + user.email;
 
   await loadSubItems();
+  await loadCounters();
   await loadTileNames();
   await loadTeams();
   await loadCompletions();
@@ -230,6 +266,17 @@ async function loadSubItems() {
   }
 }
 
+// === Load tile counters config ===
+async function loadCounters() {
+  try {
+    var resp = await fetch('tile-counters.json');
+    tileCounters = await resp.json();
+  } catch (e) {
+    console.warn('Could not load tile counters:', e);
+    tileCounters = {};
+  }
+}
+
 // === Load tile names from CSV ===
 async function loadTileNames() {
   var resp = await fetch('ThoseExiles 2026 bingo clarifications - TileClarifications.csv');
@@ -243,9 +290,12 @@ async function loadTileNames() {
   var sel = document.getElementById('comp-tile');
   sel.innerHTML = '<option value="">-- Select tile --</option>';
   allTileNames.forEach(function(name) {
+    var suffix = '';
+    if (tileSubItems[name]) suffix = ' (' + tileSubItems[name].length + ' items)';
+    else if (tileCounters[name]) suffix = ' [counter]';
     var opt = document.createElement('option');
     opt.value = name;
-    opt.textContent = name + (tileSubItems[name] ? ' (' + tileSubItems[name].length + ' items)' : '');
+    opt.textContent = name + suffix;
     sel.appendChild(opt);
   });
 }
@@ -265,50 +315,59 @@ async function loadTeams() {
     sel.appendChild(opt);
   });
 
-  // Render team cards
+  renderTeamCards();
+}
+
+function renderTeamCards() {
   var list = document.getElementById('teams-list');
   list.innerHTML = '';
+
   teamsCache.forEach(function(team) {
     var card = document.createElement('div');
     card.className = 'team-card';
     card.style.borderLeftColor = team.color;
+
+    // Basic fields
     card.innerHTML =
       '<div class="form-row"><label>Name</label><input type="text" value="' + esc(team.name) + '" data-field="name"></div>' +
       '<div class="form-row"><label>Color</label><input type="color" value="' + esc(team.color) + '" data-field="color" style="width:60px;padding:2px;"></div>' +
       '<div class="form-row"><label>Captain</label><input type="text" value="' + esc(team.captain) + '" data-field="captain"></div>' +
-      '<div class="form-row"><label>Members</label><textarea class="members-input" data-field="members" style="flex:1;background:#1a1a2e;color:#e0e0e0;border:1px solid #444;border-radius:4px;padding:8px;font-size:0.85rem;">' + (team.members || []).join('\n') + '</textarea></div>' +
-      '<div class="lms-row"><label>LMS Points</label>' +
-        '<button class="lms-btn" data-id="' + team.id + '" data-dir="-5">-5</button>' +
-        '<button class="lms-btn" data-id="' + team.id + '" data-dir="-1">-</button>' +
-        '<span class="lms-value" data-lms-id="' + team.id + '" style="color:' + ((team.lms_points || 0) >= 50 ? '#6f6' : '#ff8c00') + '">' + (team.lms_points || 0) + '</span>' +
-        '<button class="lms-btn" data-id="' + team.id + '" data-dir="1">+</button>' +
-        '<button class="lms-btn" data-id="' + team.id + '" data-dir="5">+5</button>' +
-      '</div>' +
-      '<div class="form-row"><button class="save-team-btn" data-id="' + team.id + '">Save</button></div>';
+      '<div class="form-row"><label>Members</label><textarea class="members-input" data-field="members" style="flex:1;background:#1a1a2e;color:#e0e0e0;border:1px solid #444;border-radius:4px;padding:8px;font-size:0.85rem;">' + (team.members || []).join('\n') + '</textarea></div>';
+
+    // Counters section
+    var countersDiv = document.createElement('div');
+    countersDiv.className = 'counters-section';
+    countersDiv.innerHTML = '<h4>Team Effort Counters</h4>';
+
+    // LMS Points row
+    countersDiv.appendChild(buildCounterRow(team, {
+      key: '_lms_points',
+      label: 'LMS Points',
+      target: 50,
+      step: 1,
+      bigStep: 5,
+    }));
+
+    // All tile counters
+    var counterKeys = Object.keys(tileCounters);
+    counterKeys.forEach(function(tileName) {
+      var cfg = tileCounters[tileName];
+      countersDiv.appendChild(buildCounterRow(team, cfg));
+    });
+
+    card.appendChild(countersDiv);
+
+    // Save button
+    var saveRow = document.createElement('div');
+    saveRow.className = 'form-row';
+    saveRow.style.marginTop = '12px';
+    saveRow.innerHTML = '<button class="save-team-btn" data-id="' + team.id + '">Save Team Info</button>';
+    card.appendChild(saveRow);
+
     list.appendChild(card);
   });
 
-  // LMS button handlers
-  list.querySelectorAll('.lms-btn').forEach(function(btn) {
-    btn.addEventListener('click', async function() {
-      var id = parseInt(this.dataset.id);
-      var dir = parseInt(this.dataset.dir);
-      var team = teamsCache.filter(function(t) { return t.id === id; })[0];
-      if (!team) return;
-      var newVal = Math.max(0, (team.lms_points || 0) + dir);
-      var res = await sb.from('teams').update({ lms_points: newVal }).eq('id', id);
-      if (res.error) { alert('Error: ' + res.error.message); return; }
-      team.lms_points = newVal;
-      var valEl = list.querySelector('[data-lms-id="' + id + '"]');
-      if (valEl) {
-        valEl.textContent = newVal;
-        valEl.style.color = newVal >= 50 ? '#6f6' : '#ff8c00';
-      }
-      // Refresh sub-items panel if Krystilia's tile is selected
-      updateSubItemsPanel();
-    });
-  });
-
+  // Save team info handler
   list.querySelectorAll('.save-team-btn').forEach(function(btn) {
     btn.addEventListener('click', async function() {
       var id = parseInt(this.dataset.id);
@@ -329,6 +388,114 @@ async function loadTeams() {
       else { await loadTeams(); }
     });
   });
+}
+
+function buildCounterRow(team, cfg) {
+  var isLms = cfg.key === '_lms_points';
+  var currentVal = isLms ? (team.lms_points || 0) : ((team.counters || {})[cfg.key] || 0);
+  var isDone = currentVal >= cfg.target;
+
+  var row = document.createElement('div');
+  row.className = 'counter-row';
+
+  var label = document.createElement('label');
+  label.textContent = cfg.label;
+  row.appendChild(label);
+
+  // -bigStep button
+  var btnBigMinus = document.createElement('button');
+  btnBigMinus.className = 'counter-btn wide';
+  btnBigMinus.textContent = '-' + fmtVal(cfg.bigStep, cfg.format);
+  btnBigMinus.addEventListener('click', function() { adjustCounter(team, cfg, -cfg.bigStep); });
+  row.appendChild(btnBigMinus);
+
+  // -step button
+  var btnMinus = document.createElement('button');
+  btnMinus.className = 'counter-btn';
+  btnMinus.textContent = '-';
+  btnMinus.addEventListener('click', function() { adjustCounter(team, cfg, -cfg.step); });
+  row.appendChild(btnMinus);
+
+  // Value display
+  var valSpan = document.createElement('span');
+  valSpan.className = 'counter-value';
+  valSpan.dataset.counterKey = cfg.key;
+  valSpan.dataset.teamId = team.id;
+  valSpan.style.color = isDone ? '#6f6' : '#ff8c00';
+  valSpan.textContent = fmtVal(currentVal, cfg.format) + '/' + fmtVal(cfg.target, cfg.format);
+  row.appendChild(valSpan);
+
+  // +step button
+  var btnPlus = document.createElement('button');
+  btnPlus.className = 'counter-btn';
+  btnPlus.textContent = '+';
+  btnPlus.addEventListener('click', function() { adjustCounter(team, cfg, cfg.step); });
+  row.appendChild(btnPlus);
+
+  // +bigStep button
+  var btnBigPlus = document.createElement('button');
+  btnBigPlus.className = 'counter-btn wide';
+  btnBigPlus.textContent = '+' + fmtVal(cfg.bigStep, cfg.format);
+  btnBigPlus.addEventListener('click', function() { adjustCounter(team, cfg, cfg.bigStep); });
+  row.appendChild(btnBigPlus);
+
+  // Direct input
+  var directInput = document.createElement('input');
+  directInput.className = 'counter-input';
+  directInput.type = 'number';
+  directInput.min = '0';
+  directInput.placeholder = 'Set';
+  directInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      var v = parseInt(this.value);
+      if (!isNaN(v) && v >= 0) {
+        setCounter(team, cfg, v);
+        this.value = '';
+      }
+    }
+  });
+  row.appendChild(directInput);
+
+  return row;
+}
+
+async function adjustCounter(team, cfg, delta) {
+  var isLms = cfg.key === '_lms_points';
+  var currentVal = isLms ? (team.lms_points || 0) : ((team.counters || {})[cfg.key] || 0);
+  var newVal = Math.max(0, currentVal + delta);
+  await setCounter(team, cfg, newVal);
+}
+
+async function setCounter(team, cfg, newVal) {
+  var isLms = cfg.key === '_lms_points';
+  var res;
+
+  if (isLms) {
+    res = await sb.from('teams').update({ lms_points: newVal }).eq('id', team.id);
+    if (!res.error) team.lms_points = newVal;
+  } else {
+    var counters = Object.assign({}, team.counters || {});
+    counters[cfg.key] = newVal;
+    res = await sb.from('teams').update({ counters: counters }).eq('id', team.id);
+    if (!res.error) team.counters = counters;
+  }
+
+  if (res.error) {
+    alert('Error: ' + res.error.message);
+    return;
+  }
+
+  // Update display
+  var isDone = newVal >= cfg.target;
+  var selector = '[data-counter-key="' + cfg.key + '"][data-team-id="' + team.id + '"]';
+  var valEl = document.querySelector(selector);
+  if (valEl) {
+    valEl.textContent = fmtVal(newVal, cfg.format) + '/' + fmtVal(cfg.target, cfg.format);
+    valEl.style.color = isDone ? '#6f6' : '#ff8c00';
+  }
+
+  // Refresh sub-items panel if relevant
+  updateSubItemsPanel();
 }
 
 // === Completions ===
@@ -385,6 +552,27 @@ function updateSubItemsPanel() {
   var panel = document.getElementById('sub-items-panel');
 
   if (!tileName || !tileSubItems[tileName]) {
+    // Also check if it's a counter tile
+    if (tileName && tileCounters[tileName]) {
+      panel.style.display = 'block';
+      panel.innerHTML = '<h3>' + esc(tileName) + ' — Team Effort Counter</h3>';
+      var cfg = tileCounters[tileName];
+      teamsCache.forEach(function(team) {
+        var val = (team.counters || {})[cfg.key] || 0;
+        var isDone = val >= cfg.target;
+        var section = document.createElement('div');
+        section.className = 'sub-team-section';
+        section.style.borderLeftColor = team.color;
+        section.innerHTML =
+          '<div class="sub-team-name" style="color:' + team.color + '">' + esc(team.name) +
+          ' — <span style="color:' + (isDone ? '#6f6' : '#ff8c00') + '">' +
+          fmtVal(val, cfg.format) + '/' + fmtVal(cfg.target, cfg.format) +
+          (isDone ? ' \u2713' : '') + '</span></div>' +
+          '<div style="font-size:0.8rem;color:#888;">Use the counter controls in the Teams section below to adjust.</div>';
+        panel.appendChild(section);
+      });
+      return;
+    }
     panel.style.display = 'none';
     return;
   }
@@ -398,7 +586,6 @@ function updateSubItemsPanel() {
     section.className = 'sub-team-section';
     section.style.borderLeftColor = team.color;
 
-    // Count done
     var teamComps = completionsCache.filter(function(c) {
       return c.tile_name === tileName && c.team_name === team.name;
     });
@@ -421,7 +608,6 @@ function updateSubItemsPanel() {
       cb.type = 'checkbox';
       cb.checked = done;
 
-      // Special handling for LMS sub-item
       if (subItem === '50 LMS Points') {
         var lmsVal = team.lms_points || 0;
         cb.disabled = !done && lmsVal < 50;
@@ -430,9 +616,7 @@ function updateSubItemsPanel() {
         var lmsInfo = document.createElement('span');
         lmsInfo.className = 'sub-item-lms';
         lmsInfo.textContent = '(' + lmsVal + '/50)';
-        if (lmsVal < 50 && !done) {
-          lmsInfo.style.color = '#a01020';
-        }
+        if (lmsVal < 50 && !done) lmsInfo.style.color = '#a01020';
         row.appendChild(cb);
         row.appendChild(label);
         row.appendChild(lmsInfo);
@@ -466,7 +650,6 @@ async function toggleSubItem(tileName, teamName, subItem, checked) {
       status.textContent = 'Added: ' + subItem + ' for ' + teamName;
     }
   } else {
-    // Find and delete the matching completion
     var match = completionsCache.filter(function(c) {
       return c.tile_name === tileName && c.team_name === teamName && c.sub_item === subItem;
     })[0];
@@ -485,12 +668,11 @@ async function toggleSubItem(tileName, teamName, subItem, checked) {
   setTimeout(function() { status.textContent = ''; status.className = ''; }, 3000);
 }
 
-// Update sub-items panel when tile selection changes
 document.getElementById('comp-tile').addEventListener('change', function() {
   updateSubItemsPanel();
 });
 
-// Add completion (for tiles WITHOUT sub-items)
+// Add completion (for tiles WITHOUT sub-items and NOT counter tiles)
 document.getElementById('add-comp-btn').addEventListener('click', async function() {
   var tileName = document.getElementById('comp-tile').value;
   var teamName = document.getElementById('comp-team').value;
@@ -502,10 +684,15 @@ document.getElementById('add-comp-btn').addEventListener('click', async function
     return;
   }
 
-  // If tile has sub-items, don't use the Add button
   if (tileSubItems[tileName]) {
     status.className = 'status error';
     status.textContent = 'This tile has sub-items — use the checkboxes below instead';
+    return;
+  }
+
+  if (tileCounters[tileName]) {
+    status.className = 'status error';
+    status.textContent = 'This is a counter tile — use the counter controls in the Teams section';
     return;
   }
 

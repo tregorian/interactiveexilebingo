@@ -162,17 +162,45 @@ export function selectTile(tile, el) {
     reqEl.style.display = 'none';
   }
 
-  // Completion status + sub-items checklist
+  // Completion status + sub-items checklist / counter display
   var compEl = document.getElementById('info-completion');
   compEl.innerHTML = '';
   compEl.className = 'info-completion';
 
   if (teamsDataRef && teamsDataRef.teams) {
     var tileSubItems = (teamsDataRef.tileSubItems || {})[tile.name];
+    var tileCounter = (teamsDataRef.tileCounters || {})[tile.name];
     var completionDetails = teamsDataRef.completionDetails || {};
     var tileComps = completionDetails[tile.name] || {};
+    var fmt = teamsDataRef.formatCounterValue || function(v) { return '' + v; };
 
-    if (tileSubItems && tileSubItems.length > 0) {
+    if (tileCounter) {
+      // Counter-based (team effort) tile: show progress bar per team
+      teamsDataRef.teams.forEach(function(team) {
+        var val = (team.counters || {})[tileCounter.key] || 0;
+        var pct = Math.min(100, (val / tileCounter.target) * 100);
+        var isDone = val >= tileCounter.target;
+
+        var teamBlock = document.createElement('div');
+        teamBlock.className = 'info-sub-team';
+
+        var teamHeader = document.createElement('div');
+        teamHeader.className = 'info-sub-team-header';
+        teamHeader.innerHTML = '<span class="team-badge" style="background:' + team.color + '">' +
+          escapeHtml(team.name) + '</span> ' +
+          '<span class="info-sub-progress' + (isDone ? ' done' : '') + '">' +
+          fmt(val, tileCounter.format) + '/' + fmt(tileCounter.target, tileCounter.format) +
+          '</span>';
+        teamBlock.appendChild(teamHeader);
+
+        var barWrap = document.createElement('div');
+        barWrap.className = 'info-counter-bar-wrap';
+        barWrap.innerHTML = '<div class="info-counter-bar" style="width:' + pct + '%;background:' + (isDone ? '#6f6' : team.color) + '"></div>';
+        teamBlock.appendChild(barWrap);
+
+        compEl.appendChild(teamBlock);
+      });
+    } else if (tileSubItems && tileSubItems.length > 0) {
       // Multi-item tile: show checklist per team
       teamsDataRef.teams.forEach(function(team) {
         var teamComps = tileComps[team.name] || [];

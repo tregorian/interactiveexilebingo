@@ -6,6 +6,17 @@ export function renderTeams(teamsData) {
     document.getElementById('team-panel-left'),
     document.getElementById('team-panel-right'),
   ];
+  var tileCounters = teamsData.tileCounters || {};
+  var fmt = teamsData.formatCounterValue || function(v) { return '' + v; };
+
+  // Setup dialog close
+  var dialog = document.getElementById('team-stats-dialog');
+  var closeBtn = document.getElementById('team-stats-close');
+  if (closeBtn && !closeBtn._bound) {
+    closeBtn._bound = true;
+    closeBtn.addEventListener('click', function() { dialog.close(); });
+    dialog.addEventListener('click', function(e) { if (e.target === dialog) dialog.close(); });
+  }
 
   teamsData.teams.forEach(function(team, idx) {
     var panel = panels[idx];
@@ -18,11 +29,16 @@ export function renderTeams(teamsData) {
     header.className = 'team-header';
     header.style.borderBottomColor = team.color;
 
-    var name = document.createElement('span');
-    name.className = 'team-name';
-    name.style.color = team.color;
-    name.textContent = team.name;
-    header.appendChild(name);
+    var nameRow = document.createElement('div');
+    nameRow.className = 'team-name-row';
+    nameRow.style.color = team.color;
+    nameRow.title = 'View team effort stats';
+    nameRow.innerHTML = '<span class="team-name">' + escapeHtml(team.name) + '</span> <span class="team-stats-icon">\uD83D\uDD0D</span>';
+    nameRow.addEventListener('click', function() {
+      openTeamStats(team, tileCounters, fmt);
+    });
+
+    header.appendChild(nameRow);
 
     var pts = document.createElement('span');
     pts.className = 'team-points';
@@ -49,15 +65,6 @@ export function renderTeams(teamsData) {
       panel.appendChild(el);
     });
 
-    // LMS Points
-    if (typeof team.lmsPoints === 'number') {
-      var lmsEl = document.createElement('div');
-      lmsEl.className = 'team-lms-points';
-      lmsEl.style.color = team.lmsPoints >= 50 ? '#6f6' : '#ff8c00';
-      lmsEl.textContent = 'LMS Points: ' + team.lmsPoints + '/50';
-      panel.appendChild(lmsEl);
-    }
-
     // In-progress tiles
     if (team.inProgressTiles && team.inProgressTiles.length > 0) {
       var progTitle = document.createElement('div');
@@ -69,8 +76,10 @@ export function renderTeams(teamsData) {
         var el = document.createElement('div');
         el.className = 'in-progress-tile';
         el.style.borderLeft = '3px solid ' + team.color;
+        var doneStr = prog.format ? fmt(prog.done, prog.format) : '' + prog.done;
+        var totalStr = prog.format ? fmt(prog.total, prog.format) : '' + prog.total;
         el.innerHTML = '<span class="ip-name">' + escapeHtml(prog.name) + '</span>' +
-          '<span class="ip-progress">' + prog.done + '/' + prog.total + '</span>';
+          '<span class="ip-progress">' + doneStr + '/' + totalStr + '</span>';
         panel.appendChild(el);
       });
     }
@@ -93,6 +102,46 @@ export function renderTeams(teamsData) {
   });
 }
 
+function openTeamStats(team, tileCounters, fmt) {
+  var dialog = document.getElementById('team-stats-dialog');
+  var nameEl = document.getElementById('team-stats-name');
+  var body = document.getElementById('team-stats-body');
+
+  nameEl.textContent = team.name + ' — Team Effort Stats';
+  nameEl.style.color = team.color;
+  body.innerHTML = '';
+
+  // LMS Points
+  var lmsRow = document.createElement('div');
+  lmsRow.className = 'stats-row';
+  var lmsDone = (team.lmsPoints || 0) >= 50;
+  lmsRow.innerHTML =
+    '<span class="stats-label">LMS Points</span>' +
+    '<span class="stats-bar-wrap"><span class="stats-bar" style="width:' + Math.min(100, ((team.lmsPoints || 0) / 50) * 100) + '%;background:' + (lmsDone ? '#6f6' : team.color) + '"></span></span>' +
+    '<span class="stats-value' + (lmsDone ? ' done' : '') + '">' + (team.lmsPoints || 0) + '/50</span>';
+  body.appendChild(lmsRow);
+
+  // All counter-based tiles
+  var counterNames = Object.keys(tileCounters);
+  counterNames.forEach(function(tileName) {
+    var cfg = tileCounters[tileName];
+    var val = (team.counters || {})[cfg.key] || 0;
+    var pct = Math.min(100, (val / cfg.target) * 100);
+    var isDone = val >= cfg.target;
+
+    var row = document.createElement('div');
+    row.className = 'stats-row';
+    var valStr = fmt(val, cfg.format) + '/' + fmt(cfg.target, cfg.format);
+    row.innerHTML =
+      '<span class="stats-label">' + escapeHtml(cfg.label) + '</span>' +
+      '<span class="stats-bar-wrap"><span class="stats-bar" style="width:' + pct + '%;background:' + (isDone ? '#6f6' : team.color) + '"></span></span>' +
+      '<span class="stats-value' + (isDone ? ' done' : '') + '">' + valStr + '</span>';
+    body.appendChild(row);
+  });
+
+  dialog.showModal();
+}
+
 function escapeHtml(s) {
   var d = document.createElement('div');
   d.textContent = s || '';
@@ -104,8 +153,9 @@ export function markCompletedTiles(teamsData) {
 
   var tileSubItems = teamsData.tileSubItems || {};
   var completionDetails = teamsData.completionDetails || {};
+  var fmt = teamsData.formatCounterValue || function(v) { return '' + v; };
 
-  // Track fully completed tiles per team (existing logic)
+  // Track fully completed tiles per team
   var tileTeams = {};
   teamsData.teams.forEach(function(team) {
     if (!team.completedTiles) return;
@@ -121,7 +171,7 @@ export function markCompletedTiles(teamsData) {
     if (!team.inProgressTiles) return;
     team.inProgressTiles.forEach(function(prog) {
       if (!tileInProgress[prog.name]) tileInProgress[prog.name] = [];
-      tileInProgress[prog.name].push({ team: team, done: prog.done, total: prog.total });
+      tileInProgress[prog.name].push({ team: team, done: prog.done, total: prog.total, format: prog.format });
     });
   });
 
@@ -145,32 +195,37 @@ export function markCompletedTiles(teamsData) {
 
   // Apply in-progress styles
   for (var ipName in tileInProgress) {
-    if (tileTeams[ipName]) continue; // already fully completed by someone, skip
+    if (tileTeams[ipName]) continue;
     var el = tileElements[ipName];
     if (!el) continue;
     var entries = tileInProgress[ipName];
 
-    // Show progress badge for the team furthest along
     var best = entries[0];
     for (var i = 1; i < entries.length; i++) {
-      if (entries[i].done > best.done) best = entries[i];
+      if (entries[i].done / entries[i].total > best.done / best.total) best = entries[i];
     }
 
     el.classList.add('in-progress');
     el.style.setProperty('--team-color', best.team.color);
     el.title = entries.map(function(e) {
-      return e.team.name + ': ' + e.done + '/' + e.total;
+      var d = e.format ? fmt(e.done, e.format) : '' + e.done;
+      var t = e.format ? fmt(e.total, e.format) : '' + e.total;
+      return e.team.name + ': ' + d + '/' + t;
     }).join(' | ');
 
-    // Add progress badge
     var badge = document.createElement('span');
     badge.className = 'tile-progress-badge';
 
     if (entries.length >= 2) {
-      badge.textContent = entries[0].done + '|' + entries[1].done + '/' + entries[0].total;
+      var d0 = entries[0].format ? fmt(entries[0].done, entries[0].format) : '' + entries[0].done;
+      var d1 = entries[1].format ? fmt(entries[1].done, entries[1].format) : '' + entries[1].done;
+      var t0 = entries[0].format ? fmt(entries[0].total, entries[0].format) : '' + entries[0].total;
+      badge.textContent = d0 + '|' + d1 + '/' + t0;
       badge.style.color = '#ffd700';
     } else {
-      badge.textContent = best.done + '/' + best.total;
+      var dB = best.format ? fmt(best.done, best.format) : '' + best.done;
+      var tB = best.format ? fmt(best.total, best.format) : '' + best.total;
+      badge.textContent = dB + '/' + tB;
       badge.style.color = best.team.color;
     }
     el.appendChild(badge);

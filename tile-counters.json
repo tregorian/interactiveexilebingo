@@ -1,0 +1,133 @@
+{
+  "Equilibrium": {
+    "key": "equilibrium_points",
+    "target": 20,
+    "label": "Equilibrium Points",
+    "step": 1,
+    "bigStep": 5
+  },
+  "Tzhaar Annual": {
+    "key": "tzhaar_points",
+    "target": 30,
+    "label": "TzHaar Points",
+    "step": 3,
+    "bigStep": 6
+  },
+  "Burned": {
+    "key": "wintertodt_kc",
+    "target": 75,
+    "label": "Wintertodt KC",
+    "step": 1,
+    "bigStep": 10
+  },
+  "Spurned": {
+    "key": "zalcano_kc",
+    "target": 75,
+    "label": "Zalcano KC",
+    "step": 1,
+    "bigStep": 10
+  },
+  "Whined": {
+    "key": "gotr_kc",
+    "target": 75,
+    "label": "GOTR KC",
+    "step": 1,
+    "bigStep": 10
+  },
+  "Brined": {
+    "key": "tempoross_kc",
+    "target": 75,
+    "label": "Tempoross KC",
+    "step": 1,
+    "bigStep": 10
+  },
+  "Fine, Fizzle": {
+    "key": "hespori_seeds",
+    "target": 5,
+    "label": "Hespori Seeds",
+    "step": 1,
+    "bigStep": 1
+  },
+  "Day 1 Death Count": {
+    "key": "death_screenshots",
+    "target": 10,
+    "label": "Death Screenshots",
+    "step": 1,
+    "bigStep": 5
+  },
+  "Oxie's Nightmare Scenario": {
+    "key": "colosseum_waves",
+    "target": 60,
+    "label": "Colosseum Waves",
+    "step": 1,
+    "bigStep": 12
+  },
+  "How Deep Can You Delve": {
+    "key": "delve_floors",
+    "target": 60,
+    "label": "Delve Floors",
+    "step": 1,
+    "bigStep": 16
+  },
+  "Our God's Attire": {
+    "key": "clue_caskets",
+    "target": 1000,
+    "label": "Clue Caskets",
+    "step": 10,
+    "bigStep": 100
+  },
+  "The Captain": {
+    "key": "sailing_xp",
+    "target": 500000,
+    "label": "Sailing XP",
+    "step": 10000,
+    "bigStep": 50000,
+    "format": "xp"
+  },
+  "The Lumberjack": {
+    "key": "woodcutting_xp",
+    "target": 500000,
+    "label": "Woodcutting XP",
+    "step": 10000,
+    "bigStep": 50000,
+    "format": "xp"
+  },
+  "The Excavator": {
+    "key": "mining_xp",
+    "target": 500000,
+    "label": "Mining XP",
+    "step": 10000,
+    "bigStep": 50000,
+    "format": "xp"
+  },
+  "The Athlete": {
+    "key": "agility_xp",
+    "target": 500000,
+    "label": "Agility XP",
+    "step": 10000,
+    "bigStep": 50000,
+    "format": "xp"
+  },
+  "Amateur Dog Show": {
+    "key": "purple_chests",
+    "target": 6,
+    "label": "Purple Chests",
+    "step": 1,
+    "bigStep": 1
+  },
+  "Have You Seen My Glasses?": {
+    "key": "goggles_points",
+    "target": 1,
+    "label": "Goggles Obtained",
+    "step": 1,
+    "bigStep": 1
+  },
+  "Hope You Have 89 Agility": {
+    "key": "rev_totems",
+    "target": 6000000,
+    "label": "Rev Totems GP",
+    "step": 100000,
+    "bigStep": 1000000,
+    "format": "gp"
+  }
+}
