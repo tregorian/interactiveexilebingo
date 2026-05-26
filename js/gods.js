@@ -1,18 +1,18 @@
 // === God symbol URLs ===
 export const GOD_SYMBOL = {
-  'Guthix': 'https://oldschool.runescape.wiki/images/Guthix_symbol.png',
-  'Armadyl': 'https://oldschool.runescape.wiki/images/Armadyl_symbol.png',
-  'Bandos': 'https://oldschool.runescape.wiki/images/Bandos_symbol.png',
-  'Saradomin': 'https://oldschool.runescape.wiki/images/Saradomin_symbol.png',
-  'Saradomin Ascension': 'https://oldschool.runescape.wiki/images/Saradomin_symbol.png',
-  'Seren': 'https://oldschool.runescape.wiki/images/Seren_symbol.png',
-  'Seren Ascension': 'https://oldschool.runescape.wiki/images/Seren_symbol.png',
-  'Zamorak': 'https://oldschool.runescape.wiki/images/Zamorak_symbol.png',
-  'Zamorak Ascension': 'https://oldschool.runescape.wiki/images/Zamorak_symbol.png',
-  'Zaros': 'https://oldschool.runescape.wiki/images/Zaros_symbol.png',
-  'Zaros Ascension': 'https://oldschool.runescape.wiki/images/Zaros_symbol.png',
-  'Tumeken': 'https://oldschool.runescape.wiki/images/Tumeken_symbol.png',
-  'Ralos': 'https://oldschool.runescape.wiki/images/Ralos_symbol.png',
+  'Guthix': 'assets/Guthix_symbol.png',
+  'Armadyl': 'assets/Armadyl_symbol.png',
+  'Bandos': 'assets/Bandos_symbol.png',
+  'Saradomin': 'assets/Saradomin_symbol.png',
+  'Saradomin Ascension': 'assets/Saradomin_symbol.png',
+  'Seren': 'assets/Seren_symbol.png',
+  'Seren Ascension': 'assets/Seren_symbol.png',
+  'Zamorak': 'assets/Zamorak_symbol.png',
+  'Zamorak Ascension': 'assets/Zamorak_symbol.png',
+  'Zaros': 'assets/Zaros_symbol.png',
+  'Zaros Ascension': 'assets/Zaros_symbol.png',
+  'Tumeken': 'assets/Tumeken_symbol.png',
+  'Ralos': 'assets/Ralos_symbol.png',
 };
 
 // === God background colors (for info panel) ===

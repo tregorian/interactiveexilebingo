@@ -605,7 +605,7 @@ main {
   transform: translateY(-50%);
   width: 80px;
   height: 80px;
-  opacity: 0.2;
+  opacity: 1;
   pointer-events: none;
   object-fit: contain;
 }
