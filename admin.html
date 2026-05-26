@@ -305,6 +305,7 @@ async function loadTileNames() {
   allTileNames.forEach(function(name) {
     var suffix = '';
     if (tileSubItems[name]) suffix = ' (' + tileSubItems[name].length + ' items)';
+    else if (tileCounters[name] && tileCounters[name].allowSimple) suffix = ' [counter/completion]';
     else if (tileCounters[name]) suffix = ' [counter]';
     var opt = document.createElement('option');
     opt.value = name;
@@ -360,6 +361,17 @@ function renderTeamCards() {
       step: 1,
       bigStep: 5,
     }));
+
+    // MTA Points rows (for Ultimate Booty Call)
+    var mtaCounters = [
+      { key: 'mta_telekinetic', label: 'MTA Telekinetic', target: 120, step: 10, bigStep: 30 },
+      { key: 'mta_alchemist', label: 'MTA Alchemist', target: 120, step: 10, bigStep: 30 },
+      { key: 'mta_graveyard', label: 'MTA Graveyard', target: 120, step: 10, bigStep: 30 },
+      { key: 'mta_enchantment', label: 'MTA Enchantment', target: 1200, step: 100, bigStep: 300 },
+    ];
+    mtaCounters.forEach(function(cfg) {
+      countersDiv.appendChild(buildCounterRow(team, cfg));
+    });
 
     // All tile counters
     var counterKeys = Object.keys(tileCounters);
@@ -568,21 +580,29 @@ function updateSubItemsPanel() {
   if (!tileName || !tileSubItems[tileName]) {
     // Also check if it's a counter tile
     if (tileName && tileCounters[tileName]) {
-      panel.style.display = 'block';
-      panel.innerHTML = '<h3>' + esc(tileName) + ' — Team Effort Counter</h3>';
       var cfg = tileCounters[tileName];
+      panel.style.display = 'block';
+      panel.innerHTML = '<h3>' + esc(tileName) + ' — ' + (cfg.allowSimple ? 'Counter OR Completion' : 'Team Effort Counter') + '</h3>';
       teamsCache.forEach(function(team) {
         var val = (team.counters || {})[cfg.key] || 0;
         var isDone = val >= cfg.target;
+        var hasSimple = cfg.allowSimple && completionsCache.some(function(c) {
+          return c.tile_name === tileName && c.team_name === team.name && !c.sub_item;
+        });
         var section = document.createElement('div');
         section.className = 'sub-team-section';
         section.style.borderLeftColor = team.color;
+        var statusColor = (isDone || hasSimple) ? '#6f6' : '#ff8c00';
+        var statusText = fmtVal(val, cfg.format) + '/' + fmtVal(cfg.target, cfg.format);
+        if (isDone || hasSimple) statusText += ' \u2713';
+        if (hasSimple && !isDone) statusText = 'Completed (direct)';
         section.innerHTML =
           '<div class="sub-team-name" style="color:' + team.color + '">' + esc(team.name) +
-          ' — <span style="color:' + (isDone ? '#6f6' : '#ff8c00') + '">' +
-          fmtVal(val, cfg.format) + '/' + fmtVal(cfg.target, cfg.format) +
-          (isDone ? ' \u2713' : '') + '</span></div>' +
-          '<div style="font-size:0.8rem;color:#888;">Use the counter controls in the Teams section below to adjust.</div>';
+          ' — <span style="color:' + statusColor + '">' + statusText + '</span></div>' +
+          '<div style="font-size:0.8rem;color:#888;">' +
+          (cfg.allowSimple ? 'Counter controls in Teams section below, or use Add button for direct completion.' : 'Use the counter controls in the Teams section below to adjust.') +
+          (cfg.simpleLabel ? '<br><em>' + esc(cfg.simpleLabel) + '</em>' : '') +
+          '</div>';
         panel.appendChild(section);
       });
       return;
@@ -623,18 +643,27 @@ function updateSubItemsPanel() {
       cb.type = 'checkbox';
       cb.checked = done;
 
-      if (subItem === '50 LMS Points') {
-        var lmsVal = team.lms_points || 0;
-        cb.disabled = !done && lmsVal < 50;
+      // Counter-linked sub-items (auto-complete when counter reaches target)
+      var counterLinks = {
+        '50 LMS Points': { getValue: function(t) { return t.lms_points || 0; }, target: 50 },
+        '120 Telekinetic pts': { key: 'mta_telekinetic', target: 120 },
+        '120 Alchemist pts': { key: 'mta_alchemist', target: 120 },
+        '120 Graveyard pts': { key: 'mta_graveyard', target: 120 },
+        '1200 Enchantment pts': { key: 'mta_enchantment', target: 1200 },
+      };
+      var cLink = counterLinks[subItem];
+      if (cLink) {
+        var cVal = cLink.getValue ? cLink.getValue(team) : ((team.counters || {})[cLink.key] || 0);
+        cb.disabled = !done && cVal < cLink.target;
         var label = document.createElement('span');
         label.textContent = subItem;
-        var lmsInfo = document.createElement('span');
-        lmsInfo.className = 'sub-item-lms';
-        lmsInfo.textContent = '(' + lmsVal + '/50)';
-        if (lmsVal < 50 && !done) lmsInfo.style.color = '#a01020';
+        var cInfo = document.createElement('span');
+        cInfo.className = 'sub-item-lms';
+        cInfo.textContent = '(' + cVal + '/' + cLink.target + ')';
+        if (cVal < cLink.target && !done) cInfo.style.color = '#a01020';
         row.appendChild(cb);
         row.appendChild(label);
-        row.appendChild(lmsInfo);
+        row.appendChild(cInfo);
       } else {
         var label = document.createElement('span');
         label.textContent = subItem;
@@ -734,7 +763,7 @@ document.getElementById('add-comp-btn').addEventListener('click', async function
     return;
   }
 
-  if (tileCounters[tileName]) {
+  if (tileCounters[tileName] && !tileCounters[tileName].allowSimple) {
     status.className = 'status error';
     status.textContent = 'This is a counter tile — use the counter controls in the Teams section';
     return;

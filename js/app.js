@@ -118,17 +118,26 @@ async function init() {
           });
         });
 
-        // Inject LMS auto-completions
+        // Auto-complete sub-items linked to counters
+        var counterSubItems = [
+          { tile: "Krystilia's Phone Number", subItem: '50 LMS Points', key: '_lms', getValue: function(t) { return t.lmsPoints || 0; }, target: 50 },
+          { tile: 'Ultimate Booty Call', subItem: '120 Telekinetic pts', key: 'mta_telekinetic', target: 120 },
+          { tile: 'Ultimate Booty Call', subItem: '120 Alchemist pts', key: 'mta_alchemist', target: 120 },
+          { tile: 'Ultimate Booty Call', subItem: '120 Graveyard pts', key: 'mta_graveyard', target: 120 },
+          { tile: 'Ultimate Booty Call', subItem: '1200 Enchantment pts', key: 'mta_enchantment', target: 1200 },
+        ];
         teamsData.teams.forEach(function(team) {
-          if (team.lmsPoints >= 50) {
-            var kpn = "Krystilia's Phone Number";
-            if (!completionDetails[kpn]) completionDetails[kpn] = {};
-            if (!completionDetails[kpn][team.name]) completionDetails[kpn][team.name] = [];
-            var hasLms = completionDetails[kpn][team.name].some(function(c) { return c.sub_item === '50 LMS Points'; });
-            if (!hasLms) {
-              completionDetails[kpn][team.name].push({ sub_item: '50 LMS Points', note: '' });
+          counterSubItems.forEach(function(csi) {
+            var val = csi.getValue ? csi.getValue(team) : ((team.counters || {})[csi.key] || 0);
+            if (val >= csi.target) {
+              if (!completionDetails[csi.tile]) completionDetails[csi.tile] = {};
+              if (!completionDetails[csi.tile][team.name]) completionDetails[csi.tile][team.name] = [];
+              var has = completionDetails[csi.tile][team.name].some(function(c) { return c.sub_item === csi.subItem; });
+              if (!has) {
+                completionDetails[csi.tile][team.name].push({ sub_item: csi.subItem, note: '' });
+              }
             }
-          }
+          });
         });
 
         // Store on teamsData for info panel / teams display
@@ -151,7 +160,8 @@ async function init() {
             if (counter) {
               // Counter-based (team effort) tile
               var val = team.counters[counter.key] || 0;
-              if (val >= counter.target) {
+              var hasSimpleComp = counter.allowSimple && teamComps.some(function(c) { return c.sub_item === '__complete__'; });
+              if (val >= counter.target || hasSimpleComp) {
                 team.completedTiles.push(tile.name);
                 team.points += tile.points;
               } else if (val > 0) {

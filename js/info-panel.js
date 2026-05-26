@@ -182,23 +182,36 @@ export function selectTile(tile, el) {
         var val = (team.counters || {})[tileCounter.key] || 0;
         var pct = Math.min(100, (val / tileCounter.target) * 100);
         var isDone = val >= tileCounter.target;
+        var hasSimple = tileCounter.allowSimple && tileComps[team.name] &&
+          tileComps[team.name].some(function(c) { return c.sub_item === '__complete__'; });
+        var isComplete = isDone || hasSimple;
 
         var teamBlock = document.createElement('div');
         teamBlock.className = 'info-sub-team';
 
         var teamHeader = document.createElement('div');
         teamHeader.className = 'info-sub-team-header';
+        var progressText = hasSimple && !isDone
+          ? 'Completed (direct)'
+          : fmt(val, tileCounter.format) + '/' + fmt(tileCounter.target, tileCounter.format);
         teamHeader.innerHTML = '<span class="team-badge" style="background:' + team.color + '">' +
           escapeHtml(team.name) + '</span> ' +
-          '<span class="info-sub-progress' + (isDone ? ' done' : '') + '">' +
-          fmt(val, tileCounter.format) + '/' + fmt(tileCounter.target, tileCounter.format) +
-          '</span>';
+          '<span class="info-sub-progress' + (isComplete ? ' done' : '') + '">' +
+          progressText + '</span>';
         teamBlock.appendChild(teamHeader);
 
         var barWrap = document.createElement('div');
         barWrap.className = 'info-counter-bar-wrap';
-        barWrap.innerHTML = '<div class="info-counter-bar" style="width:' + pct + '%;background:' + (isDone ? '#6f6' : team.color) + '"></div>';
+        var barPct = isComplete ? 100 : pct;
+        barWrap.innerHTML = '<div class="info-counter-bar" style="width:' + barPct + '%;background:' + (isComplete ? '#6f6' : team.color) + '"></div>';
         teamBlock.appendChild(barWrap);
+
+        if (tileCounter.simpleLabel) {
+          var hint = document.createElement('div');
+          hint.style.cssText = 'font-size:0.75rem;color:#888;font-style:italic;margin-top:2px;';
+          hint.textContent = tileCounter.simpleLabel;
+          teamBlock.appendChild(hint);
+        }
 
         compEl.appendChild(teamBlock);
       });
@@ -233,9 +246,19 @@ export function selectTile(tile, el) {
           item.className = 'info-sub-item' + (done ? ' done' : '');
 
           var check = '<span class="info-sub-check">' + (done ? '\u2713' : '\u2717') + '</span> ';
-          if (subItem === '50 LMS Points') {
-            var lmsText = subItem + ' (' + (team.lmsPoints || 0) + '/50)';
-            item.innerHTML = check + escapeHtml(lmsText);
+          // Counter-linked sub-items
+          var counterLinks = {
+            '50 LMS Points': { getValue: function(t) { return t.lmsPoints || 0; }, target: 50 },
+            '120 Telekinetic pts': { key: 'mta_telekinetic', target: 120 },
+            '120 Alchemist pts': { key: 'mta_alchemist', target: 120 },
+            '120 Graveyard pts': { key: 'mta_graveyard', target: 120 },
+            '1200 Enchantment pts': { key: 'mta_enchantment', target: 1200 },
+          };
+          var cLink = counterLinks[subItem];
+          if (cLink) {
+            var cVal = cLink.getValue ? cLink.getValue(team) : ((team.counters || {})[cLink.key] || 0);
+            var cText = subItem + ' (' + cVal + '/' + cLink.target + ')';
+            item.innerHTML = check + escapeHtml(cText);
           } else if (done && comp.note) {
             item.innerHTML = check + escapeHtml(subItem) + ' <span class="info-sub-note">(' + escapeHtml(comp.note) + ')</span>';
           } else {

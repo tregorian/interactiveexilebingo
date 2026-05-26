@@ -129,5 +129,32 @@
     "step": 100000,
     "bigStep": 1000000,
     "format": "gp"
+  },
+  "No One to Call, Everybody to Fear": {
+    "key": "nightmare_kc",
+    "target": 100,
+    "label": "Nightmare KC",
+    "step": 1,
+    "bigStep": 10,
+    "allowSimple": true,
+    "simpleLabel": "or Nightmare unique obtained"
+  },
+  "M-M-M-Magic!": {
+    "key": "glowing_holes",
+    "target": 3,
+    "label": "Glowing Holes",
+    "step": 1,
+    "bigStep": 1,
+    "allowSimple": true,
+    "simpleLabel": "or Eye of Ayak obtained"
+  },
+  "We Almost Didn't Have Gauntlet": {
+    "key": "crystal_seeds",
+    "target": 4,
+    "label": "Crystal Seeds",
+    "step": 1,
+    "bigStep": 1,
+    "allowSimple": true,
+    "simpleLabel": "or Enhanced Crystal Weapon Seed obtained"
   }
 }
