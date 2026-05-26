@@ -167,19 +167,18 @@ header {
   padding: 2px 0 6px;
 }
 .wom-help-btn {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+  border-radius: 6px;
   border: 1px solid #888;
   background: transparent;
   color: #aaa;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  padding: 4px 14px;
+  gap: 4px;
   line-height: 1;
 }
 .wom-help-btn:hover {
@@ -195,6 +194,11 @@ header {
   padding: 24px;
   max-width: 440px;
   width: 90%;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
 }
 .wom-dialog::backdrop {
   background: rgba(0, 0, 0, 0.7);
@@ -812,6 +816,11 @@ main {
   width: 90%;
   max-height: 80vh;
   overflow-y: auto;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
 }
 
 .team-stats-dialog::backdrop {

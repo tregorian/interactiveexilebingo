@@ -124,7 +124,7 @@ export function renderTeams(teamsData) {
       el.className = 'team-member';
       if (member === team.captain) el.className += ' captain';
       el.textContent = member;
-      el.href = 'https://wiseoldman.net/players/' + encodeURIComponent(member) + '/gained';
+      el.href = 'https://wiseoldman.net/players/' + encodeURIComponent(member) + '/gained?metric=overall&startDate=2026-06-06T14%3A00%3A00.000Z&endDate=2026-06-23T14%3A00%3A00.000Z';
       el.target = '_blank';
       el.rel = 'noopener';
       panel.appendChild(el);
