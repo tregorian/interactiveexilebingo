@@ -215,16 +215,37 @@ function escapeHtml(s) {
   return d.innerHTML;
 }
 
-export function markCompletedTiles(teamsData) {
+export function clearCompletionStyles() {
+  for (var name in tileElements) {
+    var el = tileElements[name];
+    el.classList.remove('completed-single', 'completed-both', 'in-progress', 'section-locked');
+    el.style.removeProperty('--team-color');
+    el.style.removeProperty('--team-color-1');
+    el.style.removeProperty('--team-color-2');
+    el.title = '';
+    var badge = el.querySelector('.tile-progress-badge');
+    if (badge) badge.remove();
+    var lockIcon = el.querySelector('.tile-lock-icon');
+    if (lockIcon) lockIcon.remove();
+  }
+}
+
+export function markCompletedTiles(teamsData, viewMode, depGraph) {
   if (!teamsData || !teamsData.teams) return;
 
-  var tileSubItems = teamsData.tileSubItems || {};
-  var completionDetails = teamsData.completionDetails || {};
+  clearCompletionStyles();
+
   var fmt = teamsData.formatCounterValue || function(v) { return '' + v; };
+  var filterTeam = null;
+
+  if (viewMode && viewMode !== 'neutral') {
+    filterTeam = teamsData.teams.find(function(t) { return t.name === viewMode; });
+  }
 
   // Track fully completed tiles per team
   var tileTeams = {};
   teamsData.teams.forEach(function(team) {
+    if (filterTeam && team.name !== filterTeam.name) return;
     if (!team.completedTiles) return;
     team.completedTiles.forEach(function(tileName) {
       if (!tileTeams[tileName]) tileTeams[tileName] = [];
@@ -235,6 +256,7 @@ export function markCompletedTiles(teamsData) {
   // Track in-progress tiles per team
   var tileInProgress = {};
   teamsData.teams.forEach(function(team) {
+    if (filterTeam && team.name !== filterTeam.name) return;
     if (!team.inProgressTiles) return;
     team.inProgressTiles.forEach(function(prog) {
       if (!tileInProgress[prog.name]) tileInProgress[prog.name] = [];
@@ -248,7 +270,7 @@ export function markCompletedTiles(teamsData) {
     if (!el) continue;
     var teams = tileTeams[tileName];
 
-    if (teams.length >= 2) {
+    if (!filterTeam && teams.length >= 2) {
       el.classList.add('completed-both');
       el.style.setProperty('--team-color-1', teams[0].color);
       el.style.setProperty('--team-color-2', teams[1].color);
@@ -283,7 +305,7 @@ export function markCompletedTiles(teamsData) {
     var badge = document.createElement('span');
     badge.className = 'tile-progress-badge';
 
-    if (entries.length >= 2) {
+    if (!filterTeam && entries.length >= 2) {
       var d0 = entries[0].format ? fmt(entries[0].done, entries[0].format) : '' + entries[0].done;
       var d1 = entries[1].format ? fmt(entries[1].done, entries[1].format) : '' + entries[1].done;
       var t0 = entries[0].format ? fmt(entries[0].total, entries[0].format) : '' + entries[0].total;
@@ -296,5 +318,31 @@ export function markCompletedTiles(teamsData) {
       badge.style.color = best.team.color;
     }
     el.appendChild(badge);
+  }
+
+  // In team view, dim tiles in god sections the team hasn't unlocked
+  if (filterTeam && depGraph && depGraph.godUnlockedBy) {
+    var teamCompleted = filterTeam.completedTiles || [];
+    var lockedGods = {};
+
+    for (var god in depGraph.godUnlockedBy) {
+      var unlockers = depGraph.godUnlockedBy[god];
+      var allDone = unlockers.every(function(tileName) {
+        return teamCompleted.indexOf(tileName) !== -1;
+      });
+      if (!allDone) lockedGods[god] = true;
+    }
+
+    for (var tName in tileElements) {
+      var tEl = tileElements[tName];
+      var tileGod = tEl.dataset.god;
+      if (tileGod && lockedGods[tileGod]) {
+        tEl.classList.add('section-locked');
+        var lock = document.createElement('span');
+        lock.className = 'tile-lock-icon';
+        lock.textContent = '\uD83D\uDD12';
+        tEl.appendChild(lock);
+      }
+    }
   }
 }

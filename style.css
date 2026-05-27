@@ -162,6 +162,43 @@ header {
   filter: brightness(0.5) !important;
 }
 
+/* View toggle */
+.view-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  padding: 4px 0 8px;
+}
+.view-toggle-btn {
+  padding: 5px 18px;
+  border: 1px solid #555;
+  background: transparent;
+  color: #aaa;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  letter-spacing: 0.5px;
+}
+.view-toggle-btn:first-child {
+  border-radius: 6px 0 0 6px;
+}
+.view-toggle-btn:last-child {
+  border-radius: 0 6px 6px 0;
+}
+.view-toggle-btn:not(:first-child) {
+  border-left: none;
+}
+.view-toggle-btn:hover {
+  color: #fff;
+  border-color: var(--btn-color);
+}
+.view-toggle-btn.active {
+  background: var(--btn-color);
+  color: #000;
+  border-color: var(--btn-color);
+}
+
 .page-help-row {
   text-align: center;
   padding: 2px 0 6px;
@@ -438,6 +475,25 @@ main {
   font-weight: 900;
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
   z-index: 1;
+}
+
+/* Locked god section (team view) */
+.tile.section-locked {
+  opacity: 0.35;
+  filter: saturate(0.3) brightness(0.6);
+}
+.tile.section-locked:hover {
+  opacity: 0.55;
+  filter: saturate(0.5) brightness(0.8);
+}
+.tile-lock-icon {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-size: 0.55rem;
+  line-height: 1;
+  pointer-events: none;
+  opacity: 0.8;
 }
 
 /* Tile */

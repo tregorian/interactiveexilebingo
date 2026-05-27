@@ -2,6 +2,7 @@ import { buildDependencyGraph } from './layout.js';
 import { renderBoard, tileElements } from './board.js';
 import { initInfoPanel, highlightDeps, clearHighlights, selectTile } from './info-panel.js';
 import { renderTeams, markCompletedTiles } from './teams.js';
+import { initViewToggle } from './view-toggle.js';
 
 // === Page help dialog ===
 document.getElementById('page-help-btn').addEventListener('click', function() {
@@ -208,7 +209,11 @@ async function init() {
   // Update info panel with teams data and render
   initInfoPanel({ allTiles, depGraph, teamsData });
   renderTeams(teamsData);
-  markCompletedTiles(teamsData);
+  markCompletedTiles(teamsData, 'neutral', depGraph);
+
+  initViewToggle(teamsData, function(viewMode) {
+    markCompletedTiles(teamsData, viewMode, depGraph);
+  });
 
   // Tile search
   var searchInput = document.getElementById('tile-search');
