@@ -186,7 +186,36 @@ async function init() {
               subs.forEach(function(s) {
                 if (compNames.indexOf(s) !== -1) done++;
               });
-              if (done >= subs.length) {
+
+              // Grouped completion: tile completes when N groups are fully done
+              var groupedTiles = {
+                'Brothers Betrayed': {
+                  required: 2,
+                  groups: [
+                    ["Ahrim's Hood", "Ahrim's Robetop", "Ahrim's Robeskirt", "Ahrim's Staff"],
+                    ["Dharok's Helm", "Dharok's Platebody", "Dharok's Platelegs", "Dharok's Greataxe"],
+                    ["Guthan's Helm", "Guthan's Platebody", "Guthan's Chainskirt", "Guthan's Warspear"],
+                    ["Karil's Coif", "Karil's Leathertop", "Karil's Leatherskirt", "Karil's Crossbow"],
+                    ["Torag's Helm", "Torag's Platebody", "Torag's Platelegs", "Torag's Hammers"],
+                    ["Verac's Helm", "Verac's Brassard", "Verac's Plateskirt", "Verac's Flail"],
+                  ]
+                }
+              };
+
+              var grouped = groupedTiles[tile.name];
+              if (grouped) {
+                var setsComplete = 0;
+                grouped.groups.forEach(function(group) {
+                  var groupDone = group.every(function(item) { return compNames.indexOf(item) !== -1; });
+                  if (groupDone) setsComplete++;
+                });
+                if (setsComplete >= grouped.required) {
+                  team.completedTiles.push(tile.name);
+                  team.points += tile.points;
+                } else if (done > 0) {
+                  team.inProgressTiles.push({ name: tile.name, done: setsComplete, total: grouped.required });
+                }
+              } else if (done >= subs.length) {
                 team.completedTiles.push(tile.name);
                 team.points += tile.points;
               } else if (done > 0) {

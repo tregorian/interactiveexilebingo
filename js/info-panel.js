@@ -229,17 +229,58 @@ export function selectTile(tile, el) {
         var teamBlock = document.createElement('div');
         teamBlock.className = 'info-sub-team';
 
+        // Grouped tiles: show sets completed instead of items
+        var groupedTiles = {
+          'Brothers Betrayed': {
+            required: 2,
+            groups: [
+              { name: "Ahrim's", items: ["Ahrim's Hood", "Ahrim's Robetop", "Ahrim's Robeskirt", "Ahrim's Staff"] },
+              { name: "Dharok's", items: ["Dharok's Helm", "Dharok's Platebody", "Dharok's Platelegs", "Dharok's Greataxe"] },
+              { name: "Guthan's", items: ["Guthan's Helm", "Guthan's Platebody", "Guthan's Chainskirt", "Guthan's Warspear"] },
+              { name: "Karil's", items: ["Karil's Coif", "Karil's Leathertop", "Karil's Leatherskirt", "Karil's Crossbow"] },
+              { name: "Torag's", items: ["Torag's Helm", "Torag's Platebody", "Torag's Platelegs", "Torag's Hammers"] },
+              { name: "Verac's", items: ["Verac's Helm", "Verac's Brassard", "Verac's Plateskirt", "Verac's Flail"] },
+            ]
+          }
+        };
+        var grouped = groupedTiles[tile.name];
+
         var teamHeader = document.createElement('div');
         teamHeader.className = 'info-sub-team-header';
-        teamHeader.innerHTML = '<span class="team-badge" style="background:' + team.color + '">' +
-          escapeHtml(team.name) + '</span> ' +
-          '<span class="info-sub-progress">' + doneCount + '/' + tileSubItems.length + '</span>';
+        if (grouped) {
+          var setsComplete = 0;
+          grouped.groups.forEach(function(g) {
+            if (g.items.every(function(i) { return !!compMap[i]; })) setsComplete++;
+          });
+          teamHeader.innerHTML = '<span class="team-badge" style="background:' + team.color + '">' +
+            escapeHtml(team.name) + '</span> ' +
+            '<span class="info-sub-progress' + (setsComplete >= grouped.required ? ' done' : '') + '">' +
+            setsComplete + '/' + grouped.required + ' sets</span>';
+        } else {
+          teamHeader.innerHTML = '<span class="team-badge" style="background:' + team.color + '">' +
+            escapeHtml(team.name) + '</span> ' +
+            '<span class="info-sub-progress">' + doneCount + '/' + tileSubItems.length + '</span>';
+        }
         teamBlock.appendChild(teamHeader);
 
         var list = document.createElement('div');
-        list.className = 'info-sub-list';
+        list.className = 'info-sub-list' + (grouped ? ' info-sub-list-grouped' : '');
 
-        tileSubItems.forEach(function(subItem) {
+        tileSubItems.forEach(function(subItem, idx) {
+          // Insert group header for grouped tiles
+          if (grouped) {
+            for (var gi = 0; gi < grouped.groups.length; gi++) {
+              var g = grouped.groups[gi];
+              if (g.items[0] === subItem) {
+                var groupDone = g.items.every(function(i) { return !!compMap[i]; });
+                var groupCount = g.items.filter(function(i) { return !!compMap[i]; }).length;
+                var gh = document.createElement('div');
+                gh.className = 'info-sub-group-header' + (groupDone ? ' done' : '');
+                gh.textContent = g.name + ' (' + groupCount + '/' + g.items.length + ')';
+                list.appendChild(gh);
+              }
+            }
+          }
           var comp = compMap[subItem];
           var done = !!comp;
           var item = document.createElement('div');
