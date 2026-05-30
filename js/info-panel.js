@@ -253,6 +253,9 @@ export function selectTile(tile, el) {
             '120 Alchemist pts': { key: 'mta_alchemist', target: 120 },
             '120 Graveyard pts': { key: 'mta_graveyard', target: 120 },
             '1200 Enchantment pts': { key: 'mta_enchantment', target: 1200 },
+            '8,600 Mox Resin': { key: 'goggles_mox', target: 8600 },
+            '7,000 Aga Resin': { key: 'goggles_aga', target: 7000 },
+            '9,350 Lye Resin': { key: 'goggles_lye', target: 9350 },
           };
           var cLink = counterLinks[subItem];
           if (cLink) {

@@ -373,6 +373,16 @@ function renderTeamCards() {
       countersDiv.appendChild(buildCounterRow(team, cfg));
     });
 
+    // Goggles Resin rows (for Have You Seen My Glasses?)
+    var gogglesCounters = [
+      { key: 'goggles_mox', label: 'Mox Resin', target: 8600, step: 100, bigStep: 1000 },
+      { key: 'goggles_aga', label: 'Aga Resin', target: 7000, step: 100, bigStep: 1000 },
+      { key: 'goggles_lye', label: 'Lye Resin', target: 9350, step: 100, bigStep: 1000 },
+    ];
+    gogglesCounters.forEach(function(cfg) {
+      countersDiv.appendChild(buildCounterRow(team, cfg));
+    });
+
     // All tile counters
     var counterKeys = Object.keys(tileCounters);
     counterKeys.forEach(function(tileName) {

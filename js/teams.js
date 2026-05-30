@@ -192,6 +192,7 @@ function openTeamStats(team, tileCounters, fmt) {
   var counterNames = Object.keys(tileCounters);
   counterNames.forEach(function(tileName) {
     var cfg = tileCounters[tileName];
+
     var val = (team.counters || {})[cfg.key] || 0;
     var pct = Math.min(100, (val / cfg.target) * 100);
     var isDone = val >= cfg.target;

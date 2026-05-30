@@ -101,11 +101,14 @@ async function init() {
 
         var tilePointsMap = {};
         var tileSubItemsMap = {};
-        var tileCountersMap = {};
         allTiles.forEach(function(t) {
           tilePointsMap[t.name] = t.points;
           if (t.subItems.length > 0) tileSubItemsMap[t.name] = t.subItems;
-          if (t.counter) tileCountersMap[t.name] = t.counter;
+        });
+        // Preserve tile-counters.json key order for stats display
+        var tileCountersMap = {};
+        Object.keys(tileCounters).forEach(function(name) {
+          tileCountersMap[name] = tileCounters[name];
         });
 
         // Build completion details: { tileName: { teamName: [{sub_item, note}, ...] } }
@@ -126,6 +129,9 @@ async function init() {
           { tile: 'Ultimate Booty Call', subItem: '120 Alchemist pts', key: 'mta_alchemist', target: 120 },
           { tile: 'Ultimate Booty Call', subItem: '120 Graveyard pts', key: 'mta_graveyard', target: 120 },
           { tile: 'Ultimate Booty Call', subItem: '1200 Enchantment pts', key: 'mta_enchantment', target: 1200 },
+          { tile: "Have You Seen My Glasses?", subItem: '8,600 Mox Resin', key: 'goggles_mox', target: 8600 },
+          { tile: "Have You Seen My Glasses?", subItem: '7,000 Aga Resin', key: 'goggles_aga', target: 7000 },
+          { tile: "Have You Seen My Glasses?", subItem: '9,350 Lye Resin', key: 'goggles_lye', target: 9350 },
         ];
         teamsData.teams.forEach(function(team) {
           counterSubItems.forEach(function(csi) {
@@ -194,6 +200,7 @@ async function init() {
               }
             }
           });
+
         });
       }
     } catch (e) {
