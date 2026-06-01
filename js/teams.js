@@ -1,4 +1,5 @@
 import { tileElements } from './board.js';
+import { showPlayerCard, hidePlayerCard } from './player-cards.js';
 
 // SVG connector line
 var connectorSvg = null;
@@ -127,6 +128,8 @@ export function renderTeams(teamsData) {
       el.href = 'https://wiseoldman.net/players/' + encodeURIComponent(member) + '/gained?metric=overall&startDate=2026-06-06T14%3A00%3A00.000Z&endDate=2026-06-23T14%3A00%3A00.000Z';
       el.target = '_blank';
       el.rel = 'noopener';
+      el.addEventListener('mouseenter', function(e) { showPlayerCard(member, e); });
+      el.addEventListener('mouseleave', hidePlayerCard);
       panel.appendChild(el);
     });
 

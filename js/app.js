@@ -3,6 +3,7 @@ import { renderBoard, tileElements } from './board.js';
 import { initInfoPanel, highlightDeps, clearHighlights, selectTile } from './info-panel.js';
 import { renderTeams, markCompletedTiles } from './teams.js';
 import { initViewToggle } from './view-toggle.js';
+import { showPlayerCard, hidePlayerCard } from './player-cards.js';
 
 // === Page help dialog ===
 document.getElementById('page-help-btn').addEventListener('click', function() {
@@ -250,6 +251,27 @@ async function init() {
   initViewToggle(teamsData, function(viewMode) {
     markCompletedTiles(teamsData, viewMode, depGraph);
   });
+
+  // Load draft pool
+  try {
+    var draftRes = await supabaseClient.from('draft_pool').select('*').order('created_at');
+    if (!draftRes.error && draftRes.data && draftRes.data.length > 0) {
+      var section = document.getElementById('draft-pool-section');
+      var list = document.getElementById('draft-pool-list');
+      section.style.display = 'block';
+      list.innerHTML = '';
+      draftRes.data.forEach(function(player) {
+        var el = document.createElement('div');
+        el.className = 'draft-pool-player';
+        el.textContent = player.name;
+        el.addEventListener('mouseenter', function(e) { showPlayerCard(player.name, e); });
+        el.addEventListener('mouseleave', hidePlayerCard);
+        list.appendChild(el);
+      });
+    }
+  } catch (e) {
+    console.warn('Draft pool load failed:', e);
+  }
 
   // Tile search
   var searchInput = document.getElementById('tile-search');

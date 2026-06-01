@@ -157,6 +157,23 @@
       color: #ffd700;
       margin-bottom: 6px;
     }
+
+    /* Draft Pool */
+    .draft-pool-admin { margin-top: 8px; }
+    .draft-player-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      margin: 3px 0;
+      background: #141420;
+      border-radius: 4px;
+      border-left: 3px solid #ffd700;
+      font-size: 0.85rem;
+    }
+    .draft-player-row .player-name { flex: 1; }
+    .draft-player-row select { font-size: 0.8rem; padding: 4px 8px; }
+    .draft-player-row button { padding: 4px 8px; font-size: 0.75rem; }
   </style>
 </head>
 <body>
@@ -197,6 +214,15 @@
     <input type="text" id="comp-filter" placeholder="Filter by tile name..." style="flex:1;">
   </div>
   <div id="completion-list" class="completion-list"></div>
+
+  <!-- Draft Pool -->
+  <h2>Draft Pool</h2>
+  <div class="form-row">
+    <input type="text" id="draft-name" placeholder="Player name" style="flex:1;">
+    <button id="draft-add-btn">Add to Pool</button>
+  </div>
+  <div id="draft-status"></div>
+  <div id="draft-pool-admin" class="draft-pool-admin"></div>
 
   <!-- Teams -->
   <h2>Teams</h2>
@@ -259,6 +285,7 @@ async function showAdmin(user) {
   await loadCounters();
   await loadTileNames();
   await loadTeams();
+  await loadDraftPool();
   await loadCompletions();
 }
 
@@ -789,6 +816,111 @@ document.getElementById('add-comp-btn').addEventListener('click', async function
     status.className = 'status success';
     status.textContent = 'Added: ' + tileName + ' for ' + teamName;
     await loadCompletions();
+  }
+  setTimeout(function() { status.textContent = ''; status.className = ''; }, 3000);
+});
+
+// === Draft Pool ===
+var draftPoolCache = [];
+
+async function loadDraftPool() {
+  var res = await sb.from('draft_pool').select('*').order('created_at');
+  draftPoolCache = res.data || [];
+  renderDraftPool();
+}
+
+function renderDraftPool() {
+  var list = document.getElementById('draft-pool-admin');
+  list.innerHTML = '';
+
+  if (draftPoolCache.length === 0) {
+    list.innerHTML = '<div style="color:#888;font-size:0.85rem;padding:8px;">No players in draft pool</div>';
+    return;
+  }
+
+  draftPoolCache.forEach(function(player) {
+    var row = document.createElement('div');
+    row.className = 'draft-player-row';
+
+    var name = document.createElement('span');
+    name.className = 'player-name';
+    name.textContent = player.name;
+    row.appendChild(name);
+
+    // Team select for drafting
+    var sel = document.createElement('select');
+    sel.innerHTML = '<option value="">-- Draft to --</option>';
+    teamsCache.forEach(function(t) {
+      sel.innerHTML += '<option value="' + t.id + '">' + esc(t.name) + '</option>';
+    });
+    row.appendChild(sel);
+
+    // Draft button
+    var draftBtn = document.createElement('button');
+    draftBtn.textContent = 'Draft';
+    draftBtn.addEventListener('click', async function() {
+      var teamId = parseInt(sel.value);
+      if (!teamId) { alert('Select a team first'); return; }
+      var team = teamsCache.filter(function(t) { return t.id === teamId; })[0];
+      if (!team) return;
+
+      // Add player to team members
+      var members = (team.members || []).slice();
+      if (members.indexOf(player.name) === -1) {
+        members.push(player.name);
+      }
+      var updateRes = await sb.from('teams').update({ members: members }).eq('id', teamId);
+      if (updateRes.error) { alert('Error: ' + updateRes.error.message); return; }
+
+      // Remove from draft pool
+      var delRes = await sb.from('draft_pool').delete().eq('id', player.id);
+      if (delRes.error) { alert('Error: ' + delRes.error.message); return; }
+
+      var status = document.getElementById('draft-status');
+      status.className = 'status success';
+      status.textContent = player.name + ' drafted to ' + team.name;
+      setTimeout(function() { status.textContent = ''; status.className = ''; }, 3000);
+
+      await loadDraftPool();
+      await loadTeams();
+    });
+    row.appendChild(draftBtn);
+
+    // Remove button
+    var removeBtn = document.createElement('button');
+    removeBtn.className = 'danger';
+    removeBtn.textContent = 'Remove';
+    removeBtn.addEventListener('click', async function() {
+      var res = await sb.from('draft_pool').delete().eq('id', player.id);
+      if (res.error) { alert('Error: ' + res.error.message); return; }
+      await loadDraftPool();
+    });
+    row.appendChild(removeBtn);
+
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('draft-add-btn').addEventListener('click', async function() {
+  var input = document.getElementById('draft-name');
+  var name = input.value.trim();
+  var status = document.getElementById('draft-status');
+
+  if (!name) {
+    status.className = 'status error';
+    status.textContent = 'Enter a player name';
+    return;
+  }
+
+  var res = await sb.from('draft_pool').insert({ name: name });
+  if (res.error) {
+    status.className = 'status error';
+    status.textContent = res.error.message;
+  } else {
+    status.className = 'status success';
+    status.textContent = 'Added ' + name + ' to draft pool';
+    input.value = '';
+    await loadDraftPool();
   }
   setTimeout(function() { status.textContent = ''; status.className = ''; }, 3000);
 });

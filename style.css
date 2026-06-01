@@ -1009,6 +1009,59 @@ main {
   color: #aaa;
 }
 
+/* Draft Pool */
+.draft-pool-section {
+  max-width: 800px;
+  margin: 32px auto 60px;
+  padding: 20px 24px;
+  background: #141420;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+.draft-pool-title {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #ffd700;
+  margin-bottom: 16px;
+  letter-spacing: 2px;
+}
+
+.draft-pool-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.draft-pool-player {
+  background: #1a1a2e;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  color: #e0e0e0;
+  cursor: default;
+}
+
+/* Player card tooltip */
+.player-card-tooltip {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+  border: 2px solid #ffd700;
+}
+
+.player-card-img {
+  display: block;
+  width: 600px;
+  height: auto;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   main {
