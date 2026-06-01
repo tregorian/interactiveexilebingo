@@ -1056,10 +1056,25 @@ main {
   border: 2px solid #ffd700;
 }
 
+.player-card-tooltip.mobile {
+  pointer-events: auto;
+  inset: 0;
+  margin: auto;
+  width: 90vw;
+  max-width: 500px;
+  height: fit-content;
+  max-height: 90vh;
+  background: rgba(0,0,0,0.85);
+}
+
 .player-card-img {
   display: block;
   width: 600px;
   height: auto;
+}
+
+.player-card-tooltip.mobile .player-card-img {
+  width: 100%;
 }
 
 /* Responsive */

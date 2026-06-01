@@ -2,11 +2,19 @@
 var tooltip = null;
 var cardCache = {}; // name -> true/false (whether image exists)
 
+function isMobile() {
+  return window.innerWidth <= 900;
+}
+
 function getTooltip() {
   if (tooltip) return tooltip;
   tooltip = document.createElement('div');
   tooltip.className = 'player-card-tooltip';
   tooltip.innerHTML = '<img class="player-card-img" src="" alt="">';
+  // Tap overlay to dismiss on mobile
+  tooltip.addEventListener('click', function() {
+    hidePlayerCard();
+  });
   document.body.appendChild(tooltip);
   return tooltip;
 }
@@ -27,8 +35,7 @@ export function showPlayerCard(name, event) {
 
   if (cardCache[name] === true) {
     img.src = getCardPath(name);
-    positionTooltip(tip);
-    tip.style.display = 'block';
+    showTooltip(tip);
     return;
   }
 
@@ -37,13 +44,24 @@ export function showPlayerCard(name, event) {
   testImg.onload = function() {
     cardCache[name] = true;
     img.src = getCardPath(name);
-    positionTooltip(tip);
-    tip.style.display = 'block';
+    showTooltip(tip);
   };
   testImg.onerror = function() {
     cardCache[name] = false;
   };
   testImg.src = getCardPath(name);
+}
+
+function showTooltip(tip) {
+  if (isMobile()) {
+    tip.classList.add('mobile');
+    tip.style.left = '';
+    tip.style.top = '';
+  } else {
+    tip.classList.remove('mobile');
+    positionTooltip(tip);
+  }
+  tip.style.display = 'block';
 }
 
 export function hidePlayerCard() {
