@@ -121,16 +121,26 @@ export function renderTeams(teamsData) {
     panel.appendChild(membersTitle);
 
     team.members.forEach(function(member) {
-      var el = document.createElement('a');
-      el.className = 'team-member';
-      if (member === team.captain) el.className += ' captain';
-      el.textContent = member;
-      el.href = 'https://wiseoldman.net/players/' + encodeURIComponent(member) + '/gained?metric=overall&startDate=2026-06-06T14%3A00%3A00.000Z&endDate=2026-06-23T14%3A00%3A00.000Z';
-      el.target = '_blank';
-      el.rel = 'noopener';
-      el.addEventListener('mouseenter', function(e) { showPlayerCard(member, e); });
-      el.addEventListener('mouseleave', hidePlayerCard);
-      panel.appendChild(el);
+      var row = document.createElement('div');
+      row.className = 'team-member-row';
+
+      var nameEl = document.createElement('span');
+      nameEl.className = 'team-member' + (member === team.captain ? ' captain' : '');
+      nameEl.textContent = member;
+      nameEl.addEventListener('mouseenter', function(e) { showPlayerCard(member, e); });
+      nameEl.addEventListener('mouseleave', hidePlayerCard);
+      nameEl.addEventListener('click', function(e) { showPlayerCard(member, e); });
+      row.appendChild(nameEl);
+
+      var womLink = document.createElement('a');
+      womLink.className = 'team-member-wom';
+      womLink.href = 'https://wiseoldman.net/players/' + encodeURIComponent(member) + '/gained?metric=overall&startDate=2026-06-06T14%3A00%3A00.000Z&endDate=2026-06-23T14%3A00%3A00.000Z';
+      womLink.target = '_blank';
+      womLink.rel = 'noopener';
+      womLink.innerHTML = '<img src="wom.png" alt="WOM" class="wom-icon">';
+      row.appendChild(womLink);
+
+      panel.appendChild(row);
     });
 
     // In-progress tiles
