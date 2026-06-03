@@ -24,12 +24,14 @@ function getCardPath(name) {
 }
 
 var currentTarget = null;
+var showId = 0; // incremented on each show/hide to cancel stale async callbacks
 
 export function showPlayerCard(name, event) {
   // If we already know there's no image, skip
   if (cardCache[name] === false) return;
 
   currentTarget = event.currentTarget;
+  var myId = ++showId;
   var tip = getTooltip();
   var img = tip.querySelector('img');
 
@@ -43,6 +45,7 @@ export function showPlayerCard(name, event) {
   var testImg = new Image();
   testImg.onload = function() {
     cardCache[name] = true;
+    if (myId !== showId) return; // mouse already left
     img.src = getCardPath(name);
     showTooltip(tip);
   };
@@ -65,6 +68,7 @@ function showTooltip(tip) {
 }
 
 export function hidePlayerCard() {
+  showId++;
   if (tooltip) {
     tooltip.style.display = 'none';
   }
