@@ -160,10 +160,69 @@ async function init() {
           team.inProgressTiles = [];
           team.points = 0;
 
+          // First pass: determine which tiles are completed (for unlock checks)
+          var rawCompleted = [];
           allTiles.forEach(function(tile) {
             var teamComps = (completionDetails[tile.name] || {})[team.name] || [];
             var subs = tileSubItemsMap[tile.name];
             var counter = tileCountersMap[tile.name];
+            var done = false;
+
+            if (counter) {
+              var val = team.counters[counter.key] || 0;
+              var hasSimpleComp = counter.allowSimple && teamComps.some(function(c) { return c.sub_item === '__complete__'; });
+              done = val >= counter.target || hasSimpleComp;
+            } else if (subs) {
+              var compNames = teamComps.map(function(c) { return c.sub_item; });
+              var groupedTiles = {
+                'Brothers Betrayed': {
+                  required: 2,
+                  groups: [
+                    ["Ahrim's Hood", "Ahrim's Robetop", "Ahrim's Robeskirt", "Ahrim's Staff"],
+                    ["Dharok's Helm", "Dharok's Platebody", "Dharok's Platelegs", "Dharok's Greataxe"],
+                    ["Guthan's Helm", "Guthan's Platebody", "Guthan's Chainskirt", "Guthan's Warspear"],
+                    ["Karil's Coif", "Karil's Leathertop", "Karil's Leatherskirt", "Karil's Crossbow"],
+                    ["Torag's Helm", "Torag's Platebody", "Torag's Platelegs", "Torag's Hammers"],
+                    ["Verac's Helm", "Verac's Brassard", "Verac's Plateskirt", "Verac's Flail"],
+                  ]
+                }
+              };
+              var grouped = groupedTiles[tile.name];
+              if (grouped) {
+                var setsComplete = 0;
+                grouped.groups.forEach(function(group) {
+                  if (group.every(function(item) { return compNames.indexOf(item) !== -1; })) setsComplete++;
+                });
+                done = setsComplete >= grouped.required;
+              } else {
+                var doneCount = 0;
+                subs.forEach(function(s) { if (compNames.indexOf(s) !== -1) doneCount++; });
+                done = doneCount >= subs.length;
+              }
+            } else {
+              done = teamComps.length > 0;
+            }
+            if (done) rawCompleted.push(tile.name);
+          });
+
+          // Determine locked god sections for this team
+          var lockedGods = {};
+          if (depGraph.godUnlockedBy) {
+            for (var god in depGraph.godUnlockedBy) {
+              var unlockers = depGraph.godUnlockedBy[god];
+              var allDone = unlockers.every(function(tileName) {
+                return rawCompleted.indexOf(tileName) !== -1;
+              });
+              if (!allDone) lockedGods[god] = true;
+            }
+          }
+          team.lockedGods = lockedGods;
+
+          allTiles.forEach(function(tile) {
+            var teamComps = (completionDetails[tile.name] || {})[team.name] || [];
+            var subs = tileSubItemsMap[tile.name];
+            var counter = tileCountersMap[tile.name];
+            var isLocked = !!lockedGods[tile.god];
 
             if (counter) {
               // Counter-based (team effort) tile
@@ -171,7 +230,7 @@ async function init() {
               var hasSimpleComp = counter.allowSimple && teamComps.some(function(c) { return c.sub_item === '__complete__'; });
               if (val >= counter.target || hasSimpleComp) {
                 team.completedTiles.push(tile.name);
-                team.points += tile.points;
+                if (!isLocked) team.points += tile.points;
               } else if (val > 0) {
                 team.inProgressTiles.push({
                   name: tile.name,
@@ -212,13 +271,13 @@ async function init() {
                 });
                 if (setsComplete >= grouped.required) {
                   team.completedTiles.push(tile.name);
-                  team.points += tile.points;
+                  if (!isLocked) team.points += tile.points;
                 } else if (done > 0) {
                   team.inProgressTiles.push({ name: tile.name, done: setsComplete, total: grouped.required });
                 }
               } else if (done >= subs.length) {
                 team.completedTiles.push(tile.name);
-                team.points += tile.points;
+                if (!isLocked) team.points += tile.points;
               } else if (done > 0) {
                 team.inProgressTiles.push({ name: tile.name, done: done, total: subs.length });
               }
@@ -226,7 +285,7 @@ async function init() {
               // Single-item tile: any completion record = done
               if (teamComps.length > 0) {
                 team.completedTiles.push(tile.name);
-                team.points += tile.points;
+                if (!isLocked) team.points += tile.points;
               }
             }
           });
