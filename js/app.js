@@ -16,6 +16,22 @@ document.getElementById('page-help-dialog').addEventListener('click', function(e
   if (e.target === this) this.close();
 });
 
+// === Rules dialog ===
+document.getElementById('rules-btn').addEventListener('click', function() {
+  document.getElementById('rules-dialog').showModal();
+});
+document.getElementById('rules-close').addEventListener('click', function() {
+  document.getElementById('rules-dialog').close();
+});
+document.getElementById('rules-dialog').addEventListener('click', function(e) {
+  if (e.target === this) this.close();
+});
+
+// === Refresh button ===
+document.getElementById('refresh-btn').addEventListener('click', function() {
+  location.reload();
+});
+
 // === Supabase client ===
 var SUPABASE_URL = 'https://guopmuftxabughhnllol.supabase.co';
 var SUPABASE_ANON_KEY = 'sb_publishable_eAo1MmVKKvz_hjsVQgJzfQ_62lCD-pT';
@@ -299,6 +315,10 @@ async function init() {
 
   if (!teamsData) {
     console.warn('Could not load team data from Supabase');
+    document.getElementById('load-error').style.display = 'block';
+    document.getElementById('retry-btn').addEventListener('click', function() {
+      location.reload();
+    });
     return;
   }
 

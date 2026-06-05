@@ -1031,6 +1031,22 @@ main {
   color: #aaa;
 }
 
+/* Load error */
+.load-error {
+  text-align: center;
+  padding: 24px;
+  margin: 20px auto;
+  max-width: 400px;
+  background: rgba(160, 16, 32, 0.2);
+  border: 1px solid #a01020;
+  border-radius: 8px;
+  color: #f66;
+}
+
+.load-error p {
+  margin-bottom: 12px;
+}
+
 /* Draft Pool */
 .draft-pool-section {
   max-width: 800px;

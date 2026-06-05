@@ -11,13 +11,23 @@ export function initInfoPanel({ allTiles, depGraph, teamsData }) {
   depGraphRef = depGraph;
   teamsDataRef = teamsData;
 
-  document.getElementById('info-close').addEventListener('click', () => {
-    document.getElementById('info-panel').classList.add('hidden');
-    document.querySelector('main').style.paddingBottom = '';
-    selectedTile = null;
-    document.querySelectorAll('.tile').forEach(el => {
-      el.classList.remove('dep-source', 'dep-target', 'dimmed', 'selected');
-    });
+  document.getElementById('info-close').addEventListener('click', closeInfoPanel);
+
+  // Close panel when clicking background (not a tile or the panel)
+  document.addEventListener('click', function(e) {
+    if (!selectedTile) return;
+    var panel = document.getElementById('info-panel');
+    if (panel.contains(e.target)) return;
+    if (e.target.closest('.tile')) return;
+    closeInfoPanel();
+  });
+}
+
+function closeInfoPanel() {
+  document.getElementById('info-panel').classList.add('hidden');
+  selectedTile = null;
+  document.querySelectorAll('.tile').forEach(el => {
+    el.classList.remove('dep-source', 'dep-target', 'dimmed', 'selected');
   });
 }
 
@@ -67,7 +77,6 @@ export function selectTile(tile, el) {
     selectedTile = null;
     el.classList.remove('selected');
     panel.classList.add('hidden');
-    document.querySelector('main').style.paddingBottom = '';
     document.querySelectorAll('.tile').forEach(e => {
       e.classList.remove('dep-source', 'dep-target', 'dimmed', 'selected');
     });
@@ -334,19 +343,18 @@ export function selectTile(tile, el) {
 
   panel.classList.remove('hidden');
 
-  // Adjust main padding to prevent panel from covering the board
-  requestAnimationFrame(function() {
-    var panelHeight = panel.offsetHeight;
-    document.querySelector('main').style.paddingBottom = (panelHeight + 16) + 'px';
-    // Scroll the selected tile into view above the panel
-    if (el) {
-      var tileRect = el.getBoundingClientRect();
-      var panelTop = window.innerHeight - panelHeight;
-      if (tileRect.bottom > panelTop) {
-        window.scrollBy({ top: tileRect.bottom - panelTop + 20, behavior: 'smooth' });
-      }
-    }
-  });
+  // Disabled per user feedback — panel overlays on top of board instead of pushing content
+  // requestAnimationFrame(function() {
+  //   var panelHeight = panel.offsetHeight;
+  //   document.querySelector('main').style.paddingBottom = (panelHeight + 16) + 'px';
+  //   if (el) {
+  //     var tileRect = el.getBoundingClientRect();
+  //     var panelTop = window.innerHeight - panelHeight;
+  //     if (tileRect.bottom > panelTop) {
+  //       window.scrollBy({ top: tileRect.bottom - panelTop + 20, behavior: 'smooth' });
+  //     }
+  //   }
+  // });
 }
 
 function escapeHtml(s) {

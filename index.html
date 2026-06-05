@@ -19,7 +19,7 @@
     <div class="header-right"><img src="exiles_icon.webp" alt="Those Exiles" class="exiles-logo"></div>
   </header>
 
-  <div class="codeword-bar">CODEWORD: BINGODS2026</div>
+  <div class="codeword-bar">CODEWORD: To be announced</div>
 
   <div class="event-bar">
     <span id="event-dates"></span>
@@ -34,7 +34,9 @@
   </div>
 
   <div class="page-help-row">
+    <button id="rules-btn" class="wom-help-btn" title="Bingo rules">Rules</button>
     <button id="page-help-btn" class="wom-help-btn" title="How to use this page">FAQ ?</button>
+    <button id="refresh-btn" class="wom-help-btn" title="Refresh board data">Refresh</button>
   </div>
 
   <div class="search-bar">
@@ -116,7 +118,25 @@
     <button id="page-help-close" class="wom-dialog-close">Got it</button>
   </dialog>
 
+  <dialog id="rules-dialog" class="wom-dialog">
+    <h3>BINGO RULES</h3>
+    <ul>
+      <li><strong>DO NOT</strong> change your In Game Name under any circumstances.</li>
+      <li>You <strong>MUST</strong> have your In Game Name, Drop Notification, and <strong>CODEWORD</strong> in each drop screenshot otherwise the submission will not count.</li>
+      <li><strong>NO STACKING.</strong> Please do not stack clue caskets, mini-game points, or pre-load chests such as Barrows, Gauntlet, or Raids chests. Stacking slayer points pre-bingo is okay. We have some ways to tell if people were stacking, so your tile will not count and you risk getting kicked out of the bingo.</li>
+      <li><strong>No griefing.</strong> If you see an opponent on the other team killing something in the wilderness, do not go and kill/pk/crash them thats annoying.</li>
+      <li><strong>Pet drops</strong> from bosses will count as ANY drop on the respective bosses collection log, except for Phoenix Pet at Wintertodt, and Tiny Tempor at Tempoross. Those will not count.</li>
+      <li>You will notice some boards need to be <strong>"unlocked"</strong>. Your drops will count towards those tiles HOWEVER, if you do not have those boards unlocked by completing the correct tiles, those points will not count at the end.</li>
+    </ul>
+    <button id="rules-close" class="wom-dialog-close">Got it</button>
+  </dialog>
+
   <div id="view-toggle" class="view-toggle"></div>
+
+  <div id="load-error" class="load-error" style="display:none;">
+    <p>Failed to load board data from the server.</p>
+    <button id="retry-btn" class="wom-help-btn">Retry</button>
+  </div>
 
   <main>
     <div id="team-panel-left" class="team-panel team-panel-left"></div>
