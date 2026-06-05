@@ -196,6 +196,14 @@
   <div id="user-info" class="user-info"></div>
   <button id="logout-btn" style="float:right;margin-top:-30px;" class="danger">Logout</button>
 
+  <!-- Codeword -->
+  <h2>Codeword</h2>
+  <div class="form-row">
+    <input type="text" id="codeword-input" placeholder="Leave empty for 'To be announced'" style="flex:1;">
+    <button id="codeword-save-btn">Save</button>
+  </div>
+  <div id="codeword-status"></div>
+
   <!-- Add Completion -->
   <h2>Add Completion</h2>
   <div class="form-row">
@@ -281,6 +289,7 @@ async function showAdmin(user) {
   document.getElementById('admin-section').style.display = 'block';
   document.getElementById('user-info').textContent = 'Logged in as ' + user.email;
 
+  await loadCodeword();
   await loadSubItems();
   await loadCounters();
   await loadTileNames();
@@ -288,6 +297,29 @@ async function showAdmin(user) {
   await loadDraftPool();
   await loadCompletions();
 }
+
+// === Codeword ===
+async function loadCodeword() {
+  var res = await sb.from('settings').select('value').eq('key', 'codeword').single();
+  if (!res.error && res.data) {
+    document.getElementById('codeword-input').value = res.data.value || '';
+  }
+}
+
+document.getElementById('codeword-save-btn').addEventListener('click', async function() {
+  var val = document.getElementById('codeword-input').value.trim();
+  var status = document.getElementById('codeword-status');
+
+  var res = await sb.from('settings').upsert({ key: 'codeword', value: val });
+  if (res.error) {
+    status.className = 'status error';
+    status.textContent = res.error.message;
+  } else {
+    status.className = 'status success';
+    status.textContent = val ? 'Codeword set to: ' + val : 'Codeword cleared (will show "To be announced")';
+  }
+  setTimeout(function() { status.textContent = ''; status.className = ''; }, 3000);
+});
 
 // === Load sub-items map ===
 async function loadSubItems() {

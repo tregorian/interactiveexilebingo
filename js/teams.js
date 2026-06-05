@@ -134,7 +134,7 @@ export function renderTeams(teamsData) {
 
       var womLink = document.createElement('a');
       womLink.className = 'team-member-wom';
-      womLink.href = 'https://wiseoldman.net/players/' + encodeURIComponent(member) + '/gained?metric=overall&startDate=2026-06-06T14%3A00%3A00.000Z&endDate=2026-06-27T14%3A00%3A00.000Z';
+      womLink.href = 'https://wiseoldman.net/players/' + encodeURIComponent(member) + '/gained?metric=overall&startDate=2026-06-06T14%3A00%3A00.000Z&endDate=2026-06-28T02%3A00%3A00.000Z';
       womLink.target = '_blank';
       womLink.rel = 'noopener';
       womLink.innerHTML = '<img src="wom.png" alt="WOM" class="wom-icon">';

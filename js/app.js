@@ -60,6 +60,16 @@ async function init() {
     console.warn('Supabase init failed:', e);
   }
 
+  // Fetch codeword from settings
+  if (supabaseClient) {
+    try {
+      var cwRes = await supabaseClient.from('settings').select('value').eq('key', 'codeword').single();
+      if (!cwRes.error && cwRes.data && cwRes.data.value) {
+        document.getElementById('codeword-bar').textContent = 'CODEWORD: ' + cwRes.data.value;
+      }
+    } catch (e) {}
+  }
+
   // Fetch CSV, sub-items map, and counters config in parallel
   var csvPromise = fetch(CSV_FILE).then(function(r) { return r.text(); });
   var subItemsPromise = fetch('tile-subitems.json').then(function(r) { return r.json(); }).catch(function() { return {}; });
