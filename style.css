@@ -140,6 +140,24 @@ header {
   color: #666;
 }
 
+.search-clear {
+  position: absolute;
+  left: calc(50% + 115px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+}
+
+.search-clear:hover {
+  color: #ffd700;
+}
+
 .search-count {
   position: absolute;
   left: calc(50% + 150px);

@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BinGods 2026 — Straightforward View</title>
+  <link rel="icon" type="image/webp" href="exiles_icon.webp">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.106.2" crossorigin="anonymous"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d0b0a;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 16px;
+      min-height: 100vh;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .page-header h1 {
+      font-size: 1.5rem;
+      background: linear-gradient(180deg, #e63946, #ff8c00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .page-header .subtitle {
+      color: #888;
+      font-size: 0.85rem;
+      margin-top: 4px;
+    }
+
+    .back-link {
+      display: inline-block;
+      color: #ff8c00;
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+    }
+
+    /* Team tabs */
+    .team-tabs {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .team-tab {
+      padding: 8px 24px;
+      border: 2px solid #444;
+      border-radius: 6px;
+      background: transparent;
+      color: #e0e0e0;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .team-tab.active {
+      color: #fff;
+    }
+
+    /* Section */
+    .god-section {
+      margin-bottom: 24px;
+      border: 1px solid #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .god-section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .god-section-header img {
+      width: 20px;
+      height: 20px;
+    }
+    .god-section-header .lock-badge {
+      margin-left: auto;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(255,0,0,0.2);
+      color: #f66;
+    }
+    .god-section-header .unlocked-badge {
+      margin-left: auto;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(0,180,0,0.2);
+      color: #6f6;
+    }
+
+    /* Tile row */
+    .tile-row {
+      padding: 10px 16px;
+      border-top: 1px solid #222;
+    }
+    .tile-row.completed {
+      opacity: 0.5;
+    }
+    .tile-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tile-name {
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .tile-points {
+      font-size: 0.75rem;
+      color: #ffd700;
+      background: rgba(255,215,0,0.1);
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+    .tile-status {
+      margin-left: auto;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 3px;
+    }
+    .tile-status.done {
+      background: rgba(0,180,0,0.2);
+      color: #6f6;
+    }
+    .tile-status.in-progress {
+      background: rgba(255,140,0,0.2);
+      color: #ff8c00;
+    }
+    .tile-status.todo {
+      background: rgba(255,255,255,0.05);
+      color: #666;
+    }
+    .tile-desc {
+      font-size: 0.8rem;
+      color: #999;
+      margin-top: 4px;
+    }
+    .tile-unlocks {
+      font-size: 0.75rem;
+      color: #5080a0;
+      margin-top: 2px;
+    }
+
+    /* Sub-items */
+    .sub-items {
+      margin-top: 6px;
+      padding-left: 12px;
+    }
+    .sub-item {
+      font-size: 0.8rem;
+      padding: 2px 0;
+      color: #bbb;
+    }
+    .sub-item.done {
+      color: #6f6;
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+    .sub-item .check {
+      display: inline-block;
+      width: 16px;
+    }
+
+    /* Counter bar */
+    .counter-bar-wrap {
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .counter-bar-track {
+      flex: 1;
+      height: 10px;
+      background: #1a1a2e;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .counter-bar-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.3s;
+    }
+    .counter-bar-label {
+      font-size: 0.75rem;
+      color: #aaa;
+      min-width: 80px;
+      text-align: right;
+    }
+
+    /* Loading / error */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+      font-size: 1.1rem;
+    }
+    .error {
+      text-align: center;
+      padding: 24px;
+      color: #f66;
+    }
+
+    /* Filter */
+    .filter-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 5px 14px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      background: transparent;
+      color: #e0e0e0;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .filter-btn.active {
+      border-color: #ffd700;
+      color: #ffd700;
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-link">&larr; Back to board</a>
+  <div class="page-header">
+    <h1>BINGODS — Straightforward View</h1>
+    <div class="subtitle">What to work on next, plain and simple</div>
+  </div>
+  <div class="team-tabs" id="team-tabs"></div>
+  <div class="filter-row">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="todo">To Do</button>
+    <button class="filter-btn" data-filter="in-progress">In Progress</button>
+    <button class="filter-btn" data-filter="done">Completed</button>
+  </div>
+  <div id="content"><div class="loading">Loading board data...</div></div>
+
+<script>
+var SUPABASE_URL = 'https://guopmuftxabughhnllol.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_eAo1MmVKKvz_hjsVQgJzfQ_62lCD-pT';
+var CSV_FILE = 'ThoseExiles 2026 bingo clarifications - TileClarifications.csv';
+
+var GOD_BG_COLOR = {
+  'Guthix': '#1e6b1e', 'Armadyl': '#5080a0', 'Bandos': '#5a4a1a',
+  'Saradomin': '#2040a0', 'Saradomin Ascension': '#3060c0',
+  'Seren': '#20a0b0', 'Seren Ascension': '#30b8c8',
+  'Zamorak': '#a01020', 'Zamorak Ascension': '#c02030',
+  'Zaros': '#3a1060', 'Zaros Ascension': '#5a2890',
+  'Tumeken': '#c09020', 'Ralos': '#d07020', 'ZAMAJOHNDAMIX': '#c0b8b0',
+};
+
+var GOD_SYMBOL = {
+  'Guthix': 'assets/Guthix_symbol.png', 'Armadyl': 'assets/Armadyl_symbol.png',
+  'Bandos': 'assets/Bandos_symbol.png', 'Saradomin': 'assets/Saradomin_symbol.png',
+  'Saradomin Ascension': 'assets/Saradomin_symbol.png', 'Seren': 'assets/Seren_symbol.png',
+  'Seren Ascension': 'assets/Seren_symbol.png', 'Zamorak': 'assets/Zamorak_symbol.png',
+  'Zamorak Ascension': 'assets/Zamorak_symbol.png', 'Zaros': 'assets/Zaros_symbol.png',
+  'Zaros Ascension': 'assets/Zaros_symbol.png', 'Tumeken': 'assets/Tumeken_symbol.png',
+  'Ralos': 'assets/Ralos_symbol.png',
+};
+
+var counterSubItems = [
+  { tile: "Krystilia's Phone Number", subItem: '50 LMS Points', key: '_lms', getValue: function(t) { return t.lmsPoints || 0; }, target: 50 },
+  { tile: 'Ultimate Booty Call', subItem: '120 Telekinetic pts', key: 'mta_telekinetic', target: 120 },
+  { tile: 'Ultimate Booty Call', subItem: '120 Alchemist pts', key: 'mta_alchemist', target: 120 },
+  { tile: 'Ultimate Booty Call', subItem: '120 Graveyard pts', key: 'mta_graveyard', target: 120 },
+  { tile: 'Ultimate Booty Call', subItem: '1200 Enchantment pts', key: 'mta_enchantment', target: 1200 },
+  { tile: "Have You Seen My Glasses?", subItem: '8,600 Mox Resin', key: 'goggles_mox', target: 8600 },
+  { tile: "Have You Seen My Glasses?", subItem: '7,000 Aga Resin', key: 'goggles_aga', target: 7000 },
+  { tile: "Have You Seen My Glasses?", subItem: '9,350 Lye Resin', key: 'goggles_lye', target: 9350 },
+];
+
+var counterLinksMap = {
+  '50 LMS Points': { getValue: function(t) { return t.lmsPoints || 0; }, target: 50 },
+  '120 Telekinetic pts': { key: 'mta_telekinetic', target: 120 },
+  '120 Alchemist pts': { key: 'mta_alchemist', target: 120 },
+  '120 Graveyard pts': { key: 'mta_graveyard', target: 120 },
+  '1200 Enchantment pts': { key: 'mta_enchantment', target: 1200 },
+  '8,600 Mox Resin': { key: 'goggles_mox', target: 8600 },
+  '7,000 Aga Resin': { key: 'goggles_aga', target: 7000 },
+  '9,350 Lye Resin': { key: 'goggles_lye', target: 9350 },
+};
+
+var groupedTiles = {
+  'Brothers Betrayed': {
+    required: 2,
+    groups: [
+      { name: "Ahrim's", items: ["Ahrim's Hood", "Ahrim's Robetop", "Ahrim's Robeskirt", "Ahrim's Staff"] },
+      { name: "Dharok's", items: ["Dharok's Helm", "Dharok's Platebody", "Dharok's Platelegs", "Dharok's Greataxe"] },
+      { name: "Guthan's", items: ["Guthan's Helm", "Guthan's Platebody", "Guthan's Chainskirt", "Guthan's Warspear"] },
+      { name: "Karil's", items: ["Karil's Coif", "Karil's Leathertop", "Karil's Leatherskirt", "Karil's Crossbow"] },
+      { name: "Torag's", items: ["Torag's Helm", "Torag's Platebody", "Torag's Platelegs", "Torag's Hammers"] },
+      { name: "Verac's", items: ["Verac's Helm", "Verac's Brassard", "Verac's Plateskirt", "Verac's Flail"] },
+    ]
+  }
+};
+
+function fmtVal(val, format) {
+  if (format === 'xp' || format === 'gp') {
+    if (val >= 1000000) return (val / 1000000).toFixed(1).replace(/\.0$/, '') + 'm';
+    if (val >= 1000) return Math.floor(val / 1000) + 'k';
+  }
+  return '' + val;
+}
+
+function esc(s) {
+  var d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+var allTiles, tileSubItems, tileCounters, teamsData, completionDetails, depGraph;
+var currentTeamIdx = 0;
+var currentFilter = 'all';
+
+async function init() {
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Fetch all data in parallel
+  var csvPromise = fetch(CSV_FILE).then(function(r) { return r.text(); });
+  var subItemsPromise = fetch('tile-subitems.json').then(function(r) { return r.json(); }).catch(function() { return {}; });
+  var countersPromise = fetch('tile-counters.json').then(function(r) { return r.json(); }).catch(function() { return {}; });
+  var teamsPromise = sb.from('teams').select('*');
+  var compPromise = sb.from('completions').select('*');
+
+  var csvText = await csvPromise;
+  tileSubItems = await subItemsPromise;
+  tileCounters = await countersPromise;
+  var teamsRes = await teamsPromise;
+  var compRes = await compPromise;
+
+  if (teamsRes.error || compRes.error) {
+    document.getElementById('content').innerHTML = '<div class="error">Failed to load data. <button onclick="location.reload()">Retry</button></div>';
+    return;
+  }
+
+  var parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+  allTiles = parsed.data
+    .filter(function(row) { return row['God'] && row['Tile Name']; })
+    .map(function(row) {
+      var name = row['Tile Name'].trim();
+      return {
+        god: row['God'].trim(),
+        name: name,
+        description: (row['Description'] || '').trim(),
+        points: parseInt(row['Points']) || 0,
+        unlocks: (row['Unlocks'] || '').trim().replace(/Ascenscion/g, 'Ascension'),
+        subItems: tileSubItems[name] || [],
+        counter: tileCounters[name] || null,
+      };
+    });
+
+  // Build dependency graph
+  depGraph = { godUnlockedBy: {} };
+  allTiles.forEach(function(tile) {
+    if (tile.unlocks) {
+      tile.unlocks.split('/').map(function(g) { return g.trim(); }).filter(Boolean).forEach(function(god) {
+        if (!depGraph.godUnlockedBy[god]) depGraph.godUnlockedBy[god] = [];
+        depGraph.godUnlockedBy[god].push(tile.name);
+      });
+    }
+  });
+
+  // Build teams
+  teamsData = teamsRes.data.map(function(t) {
+    return {
+      name: t.name, color: t.color, captain: t.captain,
+      members: t.members || [], lmsPoints: t.lms_points || 0,
+      counters: t.counters || {},
+    };
+  });
+
+  // Build completion details
+  completionDetails = {};
+  compRes.data.forEach(function(row) {
+    if (!completionDetails[row.tile_name]) completionDetails[row.tile_name] = {};
+    if (!completionDetails[row.tile_name][row.team_name]) completionDetails[row.tile_name][row.team_name] = [];
+    completionDetails[row.tile_name][row.team_name].push({
+      sub_item: row.sub_item || '__complete__',
+      note: row.note || '',
+    });
+  });
+
+  // Auto-complete counter-linked sub-items
+  teamsData.forEach(function(team) {
+    counterSubItems.forEach(function(csi) {
+      var val = csi.getValue ? csi.getValue(team) : ((team.counters || {})[csi.key] || 0);
+      if (val >= csi.target) {
+        if (!completionDetails[csi.tile]) completionDetails[csi.tile] = {};
+        if (!completionDetails[csi.tile][team.name]) completionDetails[csi.tile][team.name] = [];
+        var has = completionDetails[csi.tile][team.name].some(function(c) { return c.sub_item === csi.subItem; });
+        if (!has) completionDetails[csi.tile][team.name].push({ sub_item: csi.subItem, note: '' });
+      }
+    });
+  });
+
+  // Render team tabs
+  var tabsEl = document.getElementById('team-tabs');
+  teamsData.forEach(function(team, idx) {
+    var btn = document.createElement('button');
+    btn.className = 'team-tab' + (idx === 0 ? ' active' : '');
+    btn.textContent = team.name;
+    btn.style.borderColor = team.color;
+    if (idx === 0) btn.style.background = team.color + '33';
+    btn.addEventListener('click', function() {
+      currentTeamIdx = idx;
+      document.querySelectorAll('.team-tab').forEach(function(b, i) {
+        b.classList.toggle('active', i === idx);
+        b.style.background = i === idx ? teamsData[i].color + '33' : 'transparent';
+      });
+      render();
+    });
+    tabsEl.appendChild(btn);
+  });
+
+  // Filter buttons
+  document.querySelectorAll('.filter-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      currentFilter = this.dataset.filter;
+      document.querySelectorAll('.filter-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.filter === currentFilter);
+      });
+      render();
+    });
+  });
+
+  render();
+}
+
+function getTileStatus(tile, team) {
+  var teamComps = (completionDetails[tile.name] || {})[team.name] || [];
+  var subs = tile.subItems;
+  var counter = tile.counter;
+
+  if (counter) {
+    var val = (team.counters || {})[counter.key] || 0;
+    var hasSimple = counter.allowSimple && teamComps.some(function(c) { return c.sub_item === '__complete__'; });
+    if (val >= counter.target || hasSimple) return { status: 'done', done: val, total: counter.target };
+    if (val > 0) return { status: 'in-progress', done: val, total: counter.target };
+    return { status: 'todo', done: 0, total: counter.target };
+  }
+
+  if (subs && subs.length > 0) {
+    var compNames = teamComps.map(function(c) { return c.sub_item; });
+    var grouped = groupedTiles[tile.name];
+
+    if (grouped) {
+      var setsComplete = 0;
+      grouped.groups.forEach(function(g) {
+        if (g.items.every(function(i) { return compNames.indexOf(i) !== -1; })) setsComplete++;
+      });
+      if (setsComplete >= grouped.required) return { status: 'done', done: setsComplete, total: grouped.required };
+      var anyDone = compNames.length > 0;
+      if (anyDone) return { status: 'in-progress', done: setsComplete, total: grouped.required };
+      return { status: 'todo', done: 0, total: grouped.required };
+    }
+
+    var doneCount = 0;
+    subs.forEach(function(s) { if (compNames.indexOf(s) !== -1) doneCount++; });
+    if (doneCount >= subs.length) return { status: 'done', done: doneCount, total: subs.length };
+    if (doneCount > 0) return { status: 'in-progress', done: doneCount, total: subs.length };
+    return { status: 'todo', done: 0, total: subs.length };
+  }
+
+  // Single tile
+  if (teamComps.length > 0) return { status: 'done' };
+  return { status: 'todo' };
+}
+
+function isGodLocked(god, team) {
+  var unlockers = depGraph.godUnlockedBy[god];
+  if (!unlockers) return false;
+
+  // Need to compute which tiles this team has completed
+  var completed = [];
+  allTiles.forEach(function(t) {
+    var s = getTileStatus(t, team);
+    if (s.status === 'done') completed.push(t.name);
+  });
+
+  return !unlockers.every(function(n) { return completed.indexOf(n) !== -1; });
+}
+
+function render() {
+  var team = teamsData[currentTeamIdx];
+  var container = document.getElementById('content');
+  container.innerHTML = '';
+
+  // Group tiles by god
+  var godOrder = [];
+  var godTiles = {};
+  allTiles.forEach(function(tile) {
+    if (!godTiles[tile.god]) {
+      godTiles[tile.god] = [];
+      godOrder.push(tile.god);
+    }
+    godTiles[tile.god].push(tile);
+  });
+
+  godOrder.forEach(function(god) {
+    var tiles = godTiles[god];
+    var locked = isGodLocked(god, team);
+    var color = GOD_BG_COLOR[god] || '#444';
+    var symbol = GOD_SYMBOL[god] || '';
+
+    // Filter tiles
+    var filteredTiles = tiles.filter(function(tile) {
+      var s = getTileStatus(tile, team);
+      if (currentFilter === 'all') return true;
+      if (currentFilter === 'todo') return s.status === 'todo';
+      if (currentFilter === 'in-progress') return s.status === 'in-progress';
+      if (currentFilter === 'done') return s.status === 'done';
+      return true;
+    });
+
+    if (filteredTiles.length === 0) return;
+
+    var section = document.createElement('div');
+    section.className = 'god-section';
+
+    // Header
+    var header = document.createElement('div');
+    header.className = 'god-section-header';
+    header.style.background = color + '33';
+    header.style.color = color;
+
+    if (symbol) header.innerHTML = '<img src="' + symbol + '" alt="">';
+    var godName = document.createElement('span');
+    godName.textContent = god;
+    header.appendChild(godName);
+
+    if (locked) {
+      var lockBadge = document.createElement('span');
+      lockBadge.className = 'lock-badge';
+      lockBadge.textContent = 'LOCKED — no points until unlocked';
+      header.appendChild(lockBadge);
+    } else if (depGraph.godUnlockedBy[god]) {
+      var unlockBadge = document.createElement('span');
+      unlockBadge.className = 'unlocked-badge';
+      unlockBadge.textContent = 'UNLOCKED';
+      header.appendChild(unlockBadge);
+    }
+
+    section.appendChild(header);
+
+    // Tiles
+    filteredTiles.forEach(function(tile) {
+      var info = getTileStatus(tile, team);
+      var row = document.createElement('div');
+      row.className = 'tile-row' + (info.status === 'done' ? ' completed' : '');
+
+      // Header row
+      var tileHeader = document.createElement('div');
+      tileHeader.className = 'tile-header';
+      tileHeader.innerHTML =
+        '<span class="tile-name">' + esc(tile.name) + '</span>' +
+        '<span class="tile-points">' + tile.points + ' pts</span>';
+
+      // Status badge
+      var statusEl = document.createElement('span');
+      if (info.status === 'done') {
+        statusEl.className = 'tile-status done';
+        statusEl.textContent = 'DONE';
+      } else if (info.status === 'in-progress') {
+        statusEl.className = 'tile-status in-progress';
+        statusEl.textContent = info.done + '/' + info.total;
+      } else {
+        statusEl.className = 'tile-status todo';
+        statusEl.textContent = 'TO DO';
+      }
+      tileHeader.appendChild(statusEl);
+      row.appendChild(tileHeader);
+
+      // Description
+      if (tile.description) {
+        var desc = document.createElement('div');
+        desc.className = 'tile-desc';
+        desc.textContent = tile.description;
+        row.appendChild(desc);
+      }
+
+      // Unlocks info
+      if (tile.unlocks) {
+        var unlocks = document.createElement('div');
+        unlocks.className = 'tile-unlocks';
+        unlocks.textContent = 'Unlocks: ' + tile.unlocks;
+        row.appendChild(unlocks);
+      }
+
+      // Counter bar
+      if (tile.counter) {
+        var val = (team.counters || {})[tile.counter.key] || 0;
+        var hasSimple = tile.counter.allowSimple && ((completionDetails[tile.name] || {})[team.name] || []).some(function(c) { return c.sub_item === '__complete__'; });
+        var pct = hasSimple ? 100 : Math.min(100, (val / tile.counter.target) * 100);
+        var isDone = val >= tile.counter.target || hasSimple;
+
+        var barWrap = document.createElement('div');
+        barWrap.className = 'counter-bar-wrap';
+        barWrap.innerHTML =
+          '<div class="counter-bar-track">' +
+            '<div class="counter-bar-fill" style="width:' + pct + '%;background:' + (isDone ? '#6f6' : team.color) + '"></div>' +
+          '</div>' +
+          '<span class="counter-bar-label">' +
+            (hasSimple && !isDone ? 'Completed' : fmtVal(val, tile.counter.format) + ' / ' + fmtVal(tile.counter.target, tile.counter.format)) +
+          '</span>';
+        row.appendChild(barWrap);
+
+        if (tile.counter.simpleLabel) {
+          var hint = document.createElement('div');
+          hint.style.cssText = 'font-size:0.7rem;color:#666;font-style:italic;margin-top:2px;';
+          hint.textContent = tile.counter.simpleLabel;
+          row.appendChild(hint);
+        }
+      }
+
+      // Sub-items
+      if (tile.subItems && tile.subItems.length > 0 && !tile.counter) {
+        var teamComps = (completionDetails[tile.name] || {})[team.name] || [];
+        var compMap = {};
+        teamComps.forEach(function(c) { compMap[c.sub_item] = c; });
+
+        var subDiv = document.createElement('div');
+        subDiv.className = 'sub-items';
+
+        var grouped = groupedTiles[tile.name];
+        if (grouped) {
+          grouped.groups.forEach(function(g) {
+            var groupDone = g.items.every(function(i) { return !!compMap[i]; });
+            var groupCount = g.items.filter(function(i) { return !!compMap[i]; }).length;
+            var gh = document.createElement('div');
+            gh.className = 'sub-item' + (groupDone ? ' done' : '');
+            gh.style.fontWeight = '700';
+            gh.style.marginTop = '4px';
+            gh.innerHTML = '<span class="check">' + (groupDone ? '\u2713' : '\u2717') + '</span> ' +
+              esc(g.name) + ' (' + groupCount + '/' + g.items.length + ')';
+            subDiv.appendChild(gh);
+
+            g.items.forEach(function(item) {
+              var done = !!compMap[item];
+              var el = document.createElement('div');
+              el.className = 'sub-item' + (done ? ' done' : '');
+              el.style.paddingLeft = '16px';
+              var cLink = counterLinksMap[item];
+              var text = item;
+              if (cLink) {
+                var cVal = cLink.getValue ? cLink.getValue(team) : ((team.counters || {})[cLink.key] || 0);
+                text = item + ' (' + cVal + '/' + cLink.target + ')';
+              } else if (done && compMap[item].note) {
+                text = item + ' (' + compMap[item].note + ')';
+              }
+              el.innerHTML = '<span class="check">' + (done ? '\u2713' : '\u2717') + '</span> ' + esc(text);
+              subDiv.appendChild(el);
+            });
+          });
+        } else {
+          tile.subItems.forEach(function(subItem) {
+            var done = !!compMap[subItem];
+            var el = document.createElement('div');
+            el.className = 'sub-item' + (done ? ' done' : '');
+            var cLink = counterLinksMap[subItem];
+            var text = subItem;
+            if (cLink) {
+              var cVal = cLink.getValue ? cLink.getValue(team) : ((team.counters || {})[cLink.key] || 0);
+              text = subItem + ' (' + cVal + '/' + cLink.target + ')';
+            } else if (done && compMap[subItem].note) {
+              text = subItem + ' (' + compMap[subItem].note + ')';
+            }
+            el.innerHTML = '<span class="check">' + (done ? '\u2713' : '\u2717') + '</span> ' + esc(text);
+            subDiv.appendChild(el);
+          });
+        }
+
+        row.appendChild(subDiv);
+      }
+
+      section.appendChild(row);
+    });
+
+    container.appendChild(section);
+  });
+
+  if (container.children.length === 0) {
+    container.innerHTML = '<div class="loading" style="color:#666;">No tiles match this filter.</div>';
+  }
+}
+
+init();
+</script>
+</body>
+</html>

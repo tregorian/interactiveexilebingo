@@ -365,8 +365,22 @@ async function init() {
   // Tile search
   var searchInput = document.getElementById('tile-search');
   var searchCount = document.getElementById('search-count');
+  var searchClear = document.getElementById('search-clear');
   var searchTimeout = null;
+
+  function clearSearch() {
+    searchInput.value = '';
+    searchCount.textContent = '';
+    searchClear.style.display = 'none';
+    document.querySelectorAll('.tile').forEach(function(el) {
+      el.classList.remove('search-match', 'search-dimmed');
+    });
+  }
+
+  searchClear.addEventListener('click', clearSearch);
+
   searchInput.addEventListener('input', function() {
+    searchClear.style.display = searchInput.value ? 'block' : 'none';
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(function() {
       var query = searchInput.value.trim().toLowerCase();
@@ -400,13 +414,7 @@ async function init() {
   });
   // Clear on Escape
   searchInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      searchInput.value = '';
-      searchCount.textContent = '';
-      document.querySelectorAll('.tile').forEach(function(el) {
-        el.classList.remove('search-match', 'search-dimmed');
-      });
-    }
+    if (e.key === 'Escape') clearSearch();
   });
 }
 
