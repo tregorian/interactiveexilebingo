@@ -232,7 +232,7 @@ function escapeHtml(s) {
 export function clearCompletionStyles() {
   for (var name in tileElements) {
     var el = tileElements[name];
-    el.classList.remove('completed-single', 'completed-both', 'in-progress', 'section-locked');
+    el.classList.remove('completed-single', 'completed-both', 'in-progress', 'section-locked', 'completed-team-view');
     el.style.removeProperty('--team-color');
     el.style.removeProperty('--team-color-1');
     el.style.removeProperty('--team-color-2');
@@ -293,6 +293,7 @@ export function markCompletedTiles(teamsData, viewMode, depGraph) {
       el.classList.add('completed-single');
       el.style.setProperty('--team-color', teams[0].color);
       el.title = 'Completed by ' + teams[0].name;
+      if (filterTeam) el.classList.add('completed-team-view');
     }
   }
 

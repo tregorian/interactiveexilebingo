@@ -470,6 +470,30 @@ main {
   text-shadow: 0 0 6px var(--team-color);
 }
 
+.tile.completed-team-view {
+  box-shadow: inset 0 0 0 2px #6f6;
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.tile.completed-team-view > * {
+  opacity: 0.1;
+}
+
+.tile.completed-team-view::after {
+  content: '\2713';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #6f6;
+  text-shadow: 0 0 12px #6f6, 0 0 24px rgba(100, 255, 100, 0.4);
+  z-index: 2;
+  bottom: auto;
+  opacity: 1;
+}
+
 .tile.completed-both {
   box-shadow:
     inset 0 0 0 3px #ffd700,
