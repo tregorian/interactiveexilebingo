@@ -163,12 +163,15 @@ export function renderTeams(teamsData) {
       });
     }
 
-    // Completed tiles
+    // Completed tiles (collapsed by default)
     if (team.completedTiles && team.completedTiles.length > 0) {
-      var compTitle = document.createElement('div');
-      compTitle.className = 'team-section-title';
-      compTitle.textContent = 'Completed (' + team.completedTiles.length + ')';
-      panel.appendChild(compTitle);
+      var compDetails = document.createElement('details');
+      compDetails.className = 'team-collapse';
+
+      var compSummary = document.createElement('summary');
+      compSummary.className = 'team-section-title team-collapse-summary';
+      compSummary.textContent = 'Completed (' + team.completedTiles.length + ')';
+      compDetails.appendChild(compSummary);
 
       team.completedTiles.forEach(function(tileName) {
         var el = document.createElement('div');
@@ -176,8 +179,9 @@ export function renderTeams(teamsData) {
         el.textContent = tileName;
         el.style.borderLeft = '3px solid ' + team.color;
         addTileHover(el, tileName, team.color);
-        panel.appendChild(el);
+        compDetails.appendChild(el);
       });
+      panel.appendChild(compDetails);
     }
   });
 }

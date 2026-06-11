@@ -451,6 +451,35 @@ main {
   line-height: 1.3;
 }
 
+/* Collapsible team-panel section (Completed) */
+.team-panel .team-collapse-summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.team-panel .team-collapse-summary::-webkit-details-marker { display: none; }
+.team-panel .team-collapse-summary::before {
+  content: '\25B8'; /* right-pointing triangle */
+  font-size: 1.05rem;
+  line-height: 1;
+  color: #888;
+  transition: transform 0.15s;
+}
+.team-panel .team-collapse[open] > .team-collapse-summary::before { transform: rotate(90deg); }
+.team-panel .team-collapse-summary::after {
+  content: 'show';
+  margin-left: auto;
+  font-size: 0.6rem;
+  font-style: italic;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #777;
+}
+.team-panel .team-collapse[open] > .team-collapse-summary::after { content: 'hide'; }
+.team-panel .team-collapse-summary:hover::after { color: #ffd700; }
+
 /* Tile completion overlay */
 .tile.completed-single {
   box-shadow:
@@ -931,6 +960,16 @@ main {
 }
 .eq-skills-summary::-webkit-details-marker { display: none; }
 .eq-skills-summary::marker { content: ''; }
+.eq-skills-summary::before {
+  content: '\25B8'; /* right-pointing triangle */
+  display: inline-block;
+  font-size: 0.95rem;
+  line-height: 1;
+  margin-right: 5px;
+  color: #888;
+  transition: transform 0.15s;
+}
+.eq-skills[open] .eq-skills-summary::before { transform: rotate(90deg); }
 .eq-skills-summary strong { color: #ff8c00; }
 .eq-skills-summary .eq-skills-toggle { color: #888; font-style: italic; }
 .eq-skills-summary:hover .eq-skills-toggle { color: #ffd700; }

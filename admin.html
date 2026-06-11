@@ -50,6 +50,35 @@
     .back-link { display: inline-block; margin-bottom: 16px; font-size: 0.85rem; }
     .user-info { font-size: 0.8rem; color: #888; margin-bottom: 12px; }
 
+    /* Collapsible admin section */
+    .admin-collapse { margin-top: 20px; }
+    .admin-collapse-summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .admin-collapse-summary::-webkit-details-marker { display: none; }
+    .admin-collapse-summary h2 { margin: 0; }
+    .admin-collapse-summary::before {
+      content: '\25B8'; /* right-pointing triangle */
+      font-size: 1.4rem;
+      line-height: 1;
+      color: #ffd700;
+      transition: transform 0.15s;
+    }
+    .admin-collapse[open] > .admin-collapse-summary::before { transform: rotate(90deg); }
+    .admin-collapse-summary::after {
+      content: 'click to expand';
+      font-size: 0.75rem;
+      font-weight: 400;
+      font-style: italic;
+      color: #888;
+    }
+    .admin-collapse[open] > .admin-collapse-summary::after { content: 'click to collapse'; }
+    .admin-collapse-summary:hover::after { color: #ffd700; }
+
     /* Sub-items panel */
     .sub-items-panel {
       margin-top: 12px;
@@ -242,12 +271,14 @@
   <!-- Sub-items panel (shown when tile has sub-items) -->
   <div id="sub-items-panel" class="sub-items-panel" style="display:none;"></div>
 
-  <!-- Current Completions -->
-  <h2>Current Completions (<span id="comp-count">0</span>)</h2>
-  <div class="form-row">
-    <input type="text" id="comp-filter" placeholder="Filter by tile name..." style="flex:1;">
-  </div>
-  <div id="completion-list" class="completion-list"></div>
+  <!-- Current Completions (collapsed by default) -->
+  <details class="admin-collapse">
+    <summary class="admin-collapse-summary"><h2>Current Completions (<span id="comp-count">0</span>)</h2></summary>
+    <div class="form-row">
+      <input type="text" id="comp-filter" placeholder="Filter by tile name..." style="flex:1;">
+    </div>
+    <div id="completion-list" class="completion-list"></div>
+  </details>
 
   <!-- Draft Pool -->
   <h2>Draft Pool</h2>
