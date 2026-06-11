@@ -84,7 +84,7 @@
   },
   "Oxie's Nightmare Scenario": {
     "key": "colosseum_waves",
-    "target": 60,
+    "target": 40,
     "label": "Colosseum Waves",
     "step": 1,
     "bigStep": 12
