@@ -147,6 +147,24 @@
       font-size: 0.75rem;
       text-align: center;
     }
+    /* Auto-synced (WOM) counter rows: badge + value + override, no step buttons */
+    .counter-row.auto {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .counter-row.auto label { flex: 0 0 120px; }
+    .counter-row.auto .counter-value { flex: 0 0 auto; min-width: 64px; text-align: left; }
+    .counter-row.auto .counter-input { flex: 0 0 90px; width: 90px !important; }
+    .wom-badge {
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: #4af;
+      border: 1px solid #4af;
+      border-radius: 3px;
+      padding: 1px 4px;
+      white-space: nowrap;
+    }
     .counters-section {
       margin-top: 8px;
       padding-top: 8px;
@@ -204,6 +222,14 @@
   </div>
   <div id="codeword-status"></div>
 
+  <!-- WOM Fetch -->
+  <h2>WOM Fetch <span style="font-size:0.8rem;color:#888;font-weight:400;">(XP / KC / Equilibrium from Wise Old Man)</span></h2>
+  <div class="form-row">
+    <button id="wom-fetch-btn">Fetch &amp; save WOM values</button>
+    <span style="font-size:0.8rem;color:#888;">Fetches from WOM (~2&nbsp;min, rate-limited), logs to console (F12), then asks before saving.</span>
+  </div>
+  <div id="wom-status"></div>
+
   <!-- Add Completion -->
   <h2>Add Completion</h2>
   <div class="form-row">
@@ -255,6 +281,19 @@ function fmtVal(val, format) {
     return '' + val;
   }
   return '' + val;
+}
+
+// Counters whose values come from the WOM sync (see WOM_COUNTER_MAP below).
+// equilibrium_points is computed during the sync, so it's auto too.
+function isWomCounter(key) {
+  return (typeof WOM_COUNTER_MAP !== 'undefined' && WOM_COUNTER_MAP.hasOwnProperty(key)) ||
+    key === 'equilibrium_points';
+}
+
+function fmtSyncTime(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  return isNaN(d.getTime()) ? '' : d.toLocaleString();
 }
 
 // === Auth ===
@@ -410,7 +449,10 @@ function renderTeamCards() {
     // Counters section
     var countersDiv = document.createElement('div');
     countersDiv.className = 'counters-section';
-    countersDiv.innerHTML = '<h4>Team Effort Counters</h4>';
+    var syncedAt = (team.counters || {}).wom_synced_at;
+    countersDiv.innerHTML = '<h4>Team Effort Counters' +
+      (syncedAt ? ' <span style="font-weight:400;color:#4af;font-size:0.7rem;">⟳ WOM synced ' + esc(fmtSyncTime(syncedAt)) + '</span>' : '') +
+      '</h4>';
 
     // LMS Points row
     countersDiv.appendChild(buildCounterRow(team, {
@@ -488,13 +530,49 @@ function buildCounterRow(team, cfg) {
   var isLms = cfg.key === '_lms_points';
   var currentVal = isLms ? (team.lms_points || 0) : ((team.counters || {})[cfg.key] || 0);
   var isDone = currentVal >= cfg.target;
+  var isAuto = isWomCounter(cfg.key);
 
   var row = document.createElement('div');
-  row.className = 'counter-row';
+  row.className = 'counter-row' + (isAuto ? ' auto' : '');
 
   var label = document.createElement('label');
   label.textContent = cfg.label;
   row.appendChild(label);
+
+  // Auto-synced (WOM) counters: badge + value + override input only — no step buttons
+  if (isAuto) {
+    var badge = document.createElement('span');
+    badge.className = 'wom-badge';
+    badge.textContent = '⟳ WOM';
+    badge.title = 'Auto-synced from Wise Old Man. Editing is a temporary override — the next sync overwrites it.';
+    row.appendChild(badge);
+
+    var autoVal = document.createElement('span');
+    autoVal.className = 'counter-value';
+    autoVal.dataset.counterKey = cfg.key;
+    autoVal.dataset.teamId = team.id;
+    autoVal.style.color = isDone ? '#6f6' : '#ff8c00';
+    autoVal.textContent = fmtVal(currentVal, cfg.format) + '/' + fmtVal(cfg.target, cfg.format);
+    row.appendChild(autoVal);
+
+    var autoInput = document.createElement('input');
+    autoInput.className = 'counter-input';
+    autoInput.type = 'number';
+    autoInput.min = '0';
+    autoInput.placeholder = 'override';
+    autoInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        var v = parseInt(this.value);
+        if (!isNaN(v) && v >= 0) {
+          setCounter(team, cfg, v);
+          this.value = '';
+        }
+      }
+    });
+    row.appendChild(autoInput);
+
+    return row;
+  }
 
   // -bigStep button
   var btnBigMinus = document.createElement('button');
@@ -956,6 +1034,198 @@ document.getElementById('draft-add-btn').addEventListener('click', async functio
   }
   setTimeout(function() { status.textContent = ''; status.className = ''; }, 3000);
 });
+
+// === WOM Fetch ===
+// Pulls per-team XP / KC / activity gains from Wise Old Man (rosters from our DB),
+// logs them to the console, then — after a confirm — writes the WOM-tracked counters,
+// the Equilibrium points, and the 24-skill breakdown to Supabase. Anonymous WOM limit
+// is 20 requests / 60s, so player calls are spaced out.
+var WOM_API = 'https://api.wiseoldman.net/v2';
+var WOM_DELAY_MS = 3300; // ~18 req/min, safely under the 20/min anonymous cap
+// Bingo window (matches the WOM competition + the team-panel links in js/teams.js)
+var WOM_START = '2026-06-06T14:00:00.000Z';
+var WOM_END   = '2026-06-28T02:00:00.000Z';
+
+// counterKey -> which WOM metric(s) to sum. type picks the gained field:
+// skill -> experience.gained, boss -> kills.gained, activity -> score.gained
+var WOM_COUNTER_MAP = {
+  sailing_xp:     { type: 'skill',    metrics: ['sailing'] },
+  woodcutting_xp: { type: 'skill',    metrics: ['woodcutting'] },
+  mining_xp:      { type: 'skill',    metrics: ['mining'] },
+  agility_xp:     { type: 'skill',    metrics: ['agility'] },
+  wintertodt_kc:  { type: 'boss',     metrics: ['wintertodt'] },
+  zalcano_kc:     { type: 'boss',     metrics: ['zalcano'] },
+  tempoross_kc:   { type: 'boss',     metrics: ['tempoross'] },
+  nightmare_kc:   { type: 'boss',     metrics: ['nightmare', 'phosanis_nightmare'] },
+  gotr_kc:        { type: 'activity', metrics: ['guardians_of_the_rift'] },
+  clue_caskets:   { type: 'activity', metrics: ['clue_scrolls_all'] },
+};
+
+function womDelay(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+async function womFetchJson(url) {
+  for (var attempt = 0; attempt < 4; attempt++) {
+    var resp = await fetch(url);
+    if (resp.status === 429) {
+      var reset = parseInt(resp.headers.get('ratelimit-reset') || '20', 10);
+      console.warn('Rate limited — waiting ' + reset + 's before retry...');
+      await womDelay((reset + 1) * 1000);
+      continue;
+    }
+    if (!resp.ok) throw new Error('HTTP ' + resp.status + ' for ' + url);
+    return resp.json();
+  }
+  throw new Error('Gave up after repeated rate-limiting: ' + url);
+}
+
+function womGained(data, type, metric) {
+  if (type === 'skill') {
+    var s = (data.skills || {})[metric];
+    return (s && s.experience && s.experience.gained) || 0;
+  }
+  if (type === 'boss') {
+    var b = (data.bosses || {})[metric];
+    return (b && b.kills && b.kills.gained) || 0;
+  }
+  var a = (data.activities || {})[metric];
+  return (a && a.score && a.score.gained) || 0;
+}
+
+async function womFetchAll() {
+  var btn = document.getElementById('wom-fetch-btn');
+  var status = document.getElementById('wom-status');
+  btn.disabled = true;
+  status.className = 'status';
+  status.textContent = 'Fetching competition roster...';
+
+  try {
+    var start = WOM_START, end = WOM_END;
+
+    // Build rosters from our own DB (teamsCache), not the WOM competition
+    var teamPlayers = {};
+    teamsCache.forEach(function(team) {
+      teamPlayers[team.name] = (team.members || []).slice();
+    });
+
+    var total = 0;
+    Object.keys(teamPlayers).forEach(function(tn) { total += teamPlayers[tn].length; });
+
+    console.log('%c=== WOM Fetch (from DB roster) ===', 'font-weight:bold;font-size:14px');
+    console.log('Window: ' + start + '  ->  ' + end);
+    console.log('Teams: ' + Object.keys(teamPlayers).length + ' | Players: ' + total);
+
+    // teamName -> { counters: {key: sum}, skills: {skill: sum} }
+    var totals = {};
+    Object.keys(teamPlayers).forEach(function(tn) {
+      totals[tn] = { counters: {}, skills: {} };
+    });
+
+    var done = 0;
+
+    for (var tn in teamPlayers) {
+      var roster = teamPlayers[tn];
+      for (var i = 0; i < roster.length; i++) {
+        var uname = roster[i];
+        done++;
+        status.textContent = 'Fetching ' + done + '/' + total + ': ' + uname + '  (' + tn + ')';
+
+        var g;
+        try {
+          g = await womFetchJson(WOM_API + '/players/' + encodeURIComponent(uname) +
+            '/gained?startDate=' + encodeURIComponent(start) + '&endDate=' + encodeURIComponent(end));
+        } catch (e) {
+          console.warn('  ! ' + uname + ' failed: ' + e.message);
+          await womDelay(WOM_DELAY_MS);
+          continue;
+        }
+
+        var data = g.data || {};
+
+        // Sum the mapped counter metrics
+        Object.keys(WOM_COUNTER_MAP).forEach(function(ck) {
+          var cfg = WOM_COUNTER_MAP[ck];
+          var v = 0;
+          cfg.metrics.forEach(function(m) { v += womGained(data, cfg.type, m); });
+          totals[tn].counters[ck] = (totals[tn].counters[ck] || 0) + v;
+        });
+
+        // Sum all 24 skills (exclude overall) for Equilibrium
+        var skills = data.skills || {};
+        Object.keys(skills).forEach(function(sk) {
+          if (sk === 'overall') return;
+          var xp = (skills[sk].experience && skills[sk].experience.gained) || 0;
+          totals[tn].skills[sk] = (totals[tn].skills[sk] || 0) + xp;
+        });
+
+        await womDelay(WOM_DELAY_MS);
+      }
+    }
+
+    // Equilibrium points = lowest of the 24 skills / 100k, capped at 20 (2m team xp)
+    Object.keys(totals).forEach(function(tn) {
+      var skills = totals[tn].skills;
+      var vals = Object.keys(skills).map(function(k) { return skills[k]; });
+      var minXp = vals.length ? Math.min.apply(null, vals) : 0;
+      totals[tn].minXp = minXp;
+      totals[tn].equilibriumPoints = Math.min(20, Math.floor(minXp / 100000));
+    });
+
+    // Report per team
+    Object.keys(totals).forEach(function(tn) {
+      console.log('%c\n### ' + tn + '  (' + teamPlayers[tn].length + ' players)',
+        'font-weight:bold;color:#4af;font-size:13px');
+      console.log('Counter totals (tile counters):');
+      console.table(totals[tn].counters);
+      console.log('All 24 skill XP gained (Equilibrium raw):');
+      console.table(totals[tn].skills);
+      console.log('Equilibrium: lowest skill = ' + totals[tn].minXp + ' xp  ->  ' +
+        totals[tn].equilibriumPoints + '/20 points');
+    });
+
+    // Confirm before writing
+    if (!confirm('Write WOM values to ' + teamsCache.length + ' team(s)?\n\n' +
+        'Overwrites the WOM-tracked counters (Sailing/WC/Mining/Agility XP, Wintertodt/' +
+        'Zalcano/Tempoross/Nightmare KC, GOTR, clue caskets), the Equilibrium points, and ' +
+        'the 24-skill breakdown.\n\nManual counters (resin, MTA, etc.) are left untouched.')) {
+      console.log('%c=== Not saved (cancelled) ===', 'font-weight:bold;color:#fa0');
+      status.className = 'status';
+      status.textContent = 'Fetched OK — not saved (cancelled). See console.';
+      return;
+    }
+
+    // Write to DB (merge into each team's existing counters)
+    status.textContent = 'Saving...';
+    var syncedAt = new Date().toISOString();
+    var saved = 0;
+    for (var ti = 0; ti < teamsCache.length; ti++) {
+      var team = teamsCache[ti];
+      var t = totals[team.name];
+      if (!t) continue;
+      var counters = Object.assign({}, team.counters || {});
+      Object.keys(t.counters).forEach(function(ck) { counters[ck] = t.counters[ck]; });
+      counters.equilibrium_points = t.equilibriumPoints;
+      counters.equilibrium_skills = t.skills;
+      counters.wom_synced_at = syncedAt;
+      var res = await sb.from('teams').update({ counters: counters }).eq('id', team.id);
+      if (res.error) { console.error('Save failed for ' + team.name + ':', res.error); }
+      else { team.counters = counters; saved++; }
+    }
+
+    console.log('%c=== Saved ' + saved + '/' + teamsCache.length + ' team(s) ===',
+      'font-weight:bold;color:#6f6');
+    status.className = 'status success';
+    status.textContent = 'Saved ' + saved + ' team(s). Equilibrium + WOM counters updated.';
+    await loadTeams(); // refresh counter displays in the Teams section
+  } catch (e) {
+    console.error('WOM fetch error:', e);
+    status.className = 'status error';
+    status.textContent = 'Error: ' + e.message + ' (see console)';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('wom-fetch-btn').addEventListener('click', womFetchAll);
 
 function esc(s) {
   var d = document.createElement('div');

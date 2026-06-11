@@ -918,6 +918,45 @@ main {
   transition: width 0.3s;
 }
 
+/* Equilibrium per-skill breakdown (collapsible) */
+.eq-skills {
+  margin-top: 6px;
+  font-size: 0.75rem;
+}
+.eq-skills-summary {
+  cursor: pointer;
+  color: #ddd;
+  list-style: none;
+  outline: none;
+}
+.eq-skills-summary::-webkit-details-marker { display: none; }
+.eq-skills-summary::marker { content: ''; }
+.eq-skills-summary strong { color: #ff8c00; }
+.eq-skills-summary .eq-skills-toggle { color: #888; font-style: italic; }
+.eq-skills-summary:hover .eq-skills-toggle { color: #ffd700; }
+.eq-skills[open] .eq-skills-summary .eq-skills-toggle { color: #ffd700; }
+
+.eq-skills-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px 12px;
+  margin-top: 6px;
+}
+@media (max-width: 480px) {
+  .eq-skills-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.eq-skill {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 1px 0;
+  color: #bbb;
+}
+.eq-skill-name { text-transform: capitalize; }
+.eq-skill-xp { color: #fff; font-variant-numeric: tabular-nums; }
+.eq-skill.low { color: #ff8c00; font-weight: 700; }
+.eq-skill.low .eq-skill-xp { color: #ff8c00; }
+
 /* Team name row with magnifying glass */
 .team-name-row {
   display: inline-flex;

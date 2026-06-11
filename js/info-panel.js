@@ -222,6 +222,39 @@ export function selectTile(tile, el) {
           teamBlock.appendChild(hint);
         }
 
+        // Equilibrium: per-skill XP breakdown (collapsed by default to limit clutter)
+        if (tile.name === 'Equilibrium') {
+          var eqSkills = (team.counters || {}).equilibrium_skills;
+          if (eqSkills && Object.keys(eqSkills).length) {
+            var names = Object.keys(eqSkills).sort(function(a, b) {
+              return eqSkills[a] - eqSkills[b]; // lowest first — the bottleneck gates the points
+            });
+            var lowSkill = names[0];
+
+            var details = document.createElement('details');
+            details.className = 'eq-skills';
+
+            var summary = document.createElement('summary');
+            summary.className = 'eq-skills-summary';
+            summary.innerHTML = 'Lowest: <strong>' + capitalize(lowSkill) + '</strong> ' +
+              fmt(eqSkills[lowSkill], 'xp') +
+              '<span class="eq-skills-toggle"> · all 24 skills</span>';
+            details.appendChild(summary);
+
+            var grid = document.createElement('div');
+            grid.className = 'eq-skills-grid';
+            names.forEach(function(sk) {
+              var cell = document.createElement('div');
+              cell.className = 'eq-skill' + (sk === lowSkill ? ' low' : '');
+              cell.innerHTML = '<span class="eq-skill-name">' + capitalize(sk) + '</span>' +
+                '<span class="eq-skill-xp">' + fmt(eqSkills[sk], 'xp') + '</span>';
+              grid.appendChild(cell);
+            });
+            details.appendChild(grid);
+            teamBlock.appendChild(details);
+          }
+        }
+
         compEl.appendChild(teamBlock);
       });
     } else if (tileSubItems && tileSubItems.length > 0) {
@@ -361,4 +394,9 @@ function escapeHtml(s) {
   var d = document.createElement('div');
   d.textContent = s || '';
   return d.innerHTML;
+}
+
+function capitalize(s) {
+  s = '' + (s || '');
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
