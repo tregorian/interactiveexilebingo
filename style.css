@@ -992,9 +992,8 @@ main {
   color: #bbb;
 }
 .eq-skill-name { text-transform: capitalize; }
-.eq-skill-xp { color: #fff; font-variant-numeric: tabular-nums; }
-.eq-skill.low { color: #ff8c00; font-weight: 700; }
-.eq-skill.low .eq-skill-xp { color: #ff8c00; }
+.eq-skill-xp { font-variant-numeric: tabular-nums; } /* color set inline (red→green gradient) */
+.eq-skill.low { font-weight: 700; } /* bottleneck skill emphasised; color comes from the gradient */
 
 /* Team name row with magnifying glass */
 .team-name-row {

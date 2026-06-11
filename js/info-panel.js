@@ -247,7 +247,8 @@ export function selectTile(tile, el) {
               var cell = document.createElement('div');
               cell.className = 'eq-skill' + (sk === lowSkill ? ' low' : '');
               cell.innerHTML = '<span class="eq-skill-name">' + capitalize(sk) + '</span>' +
-                '<span class="eq-skill-xp">' + fmt(eqSkills[sk], 'xp') + '</span>';
+                '<span class="eq-skill-xp" style="color:' + eqSkillColor(eqSkills[sk]) + '">' +
+                fmt(eqSkills[sk], 'xp') + '</span>';
               grid.appendChild(cell);
             });
             details.appendChild(grid);
@@ -399,4 +400,12 @@ function escapeHtml(s) {
 function capitalize(s) {
   s = '' + (s || '');
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// Equilibrium skill XP color: red at 0, gradient through to green at the 2m cap.
+var EQ_CAP = 2000000;
+function eqSkillColor(xp) {
+  var ratio = Math.max(0, Math.min(1, (xp || 0) / EQ_CAP));
+  var hue = Math.round(ratio * 120); // 0 = red, 120 = green
+  return 'hsl(' + hue + ', 70%, 55%)';
 }
