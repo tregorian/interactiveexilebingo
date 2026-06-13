@@ -73,7 +73,8 @@
     "target": 20,
     "label": "Equilibrium Points",
     "step": 1,
-    "bigStep": 5
+    "bigStep": 5,
+    "variablePoints": true
   },
   "Tzhaar Annual": {
     "key": "tzhaar_points",

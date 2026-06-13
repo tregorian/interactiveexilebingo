@@ -339,18 +339,11 @@ export function markCompletedTiles(teamsData, viewMode, depGraph) {
     el.appendChild(badge);
   }
 
-  // In team view, dim tiles in god sections the team hasn't unlocked
+  // In team view, dim tiles in god sections the team hasn't unlocked.
+  // Reuse the transitive lock state computed during scoring (app.js) so the
+  // dimming matches exactly which sections actually award points.
   if (filterTeam && depGraph && depGraph.godUnlockedBy) {
-    var teamCompleted = filterTeam.completedTiles || [];
-    var lockedGods = {};
-
-    for (var god in depGraph.godUnlockedBy) {
-      var unlockers = depGraph.godUnlockedBy[god];
-      var allDone = unlockers.every(function(tileName) {
-        return teamCompleted.indexOf(tileName) !== -1;
-      });
-      if (!allDone) lockedGods[god] = true;
-    }
+    var lockedGods = filterTeam.lockedGods || {};
 
     for (var tName in tileElements) {
       var tEl = tileElements[tName];

@@ -137,8 +137,10 @@ export function buildSectionCells() {
 export function buildDependencyGraph(tiles) {
   const tileUnlocks = {};
   const godUnlockedBy = {};
+  const tileGod = {};
 
   for (const tile of tiles) {
+    tileGod[tile.name] = tile.god;
     if (tile.unlocks) {
       const gods = tile.unlocks.split('/').map(g => g.trim()).filter(Boolean);
       tileUnlocks[tile.name] = gods;
@@ -149,5 +151,43 @@ export function buildDependencyGraph(tiles) {
     }
   }
 
-  return { tileUnlocks, godUnlockedBy };
+  return { tileUnlocks, godUnlockedBy, tileGod };
+}
+
+// Compute which god sections are locked for a given set of completed tiles.
+// Locking is TRANSITIVE along the unlock chain (Guthix -> corner gods -> side
+// gods -> ascension): a god unlocks only when ALL of its unlocker tiles are
+// completed AND each of those unlocker tiles sits in a section that is itself
+// unlocked. So unlocker tiles completed on a still-locked board do not count,
+// and a downstream board stays locked until its prerequisite board is unlocked.
+// Gods with no unlock requirement (Guthix, ZAMAJOHNDAMIX) are always unlocked.
+export function computeLockedGods(depGraph, completedTiles) {
+  const godUnlockedBy = (depGraph && depGraph.godUnlockedBy) || {};
+  const tileGod = (depGraph && depGraph.tileGod) || {};
+
+  const completed = {};
+  (completedTiles || []).forEach(function(name) { completed[name] = true; });
+
+  // Start with every gated god locked, then relax to a fixpoint.
+  const locked = {};
+  for (const god in godUnlockedBy) locked[god] = true;
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const god in godUnlockedBy) {
+      if (!locked[god]) continue;
+      const open = godUnlockedBy[god].every(function(tileName) {
+        if (!completed[tileName]) return false;
+        // The unlocker tile only counts if its own section is unlocked.
+        // tileGod[tileName] absent from `locked` => ungated => unlocked.
+        return !locked[tileGod[tileName]];
+      });
+      if (open) { locked[god] = false; changed = true; }
+    }
+  }
+
+  const result = {};
+  for (const god in locked) { if (locked[god]) result[god] = true; }
+  return result;
 }

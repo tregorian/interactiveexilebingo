@@ -1,4 +1,4 @@
-import { buildDependencyGraph } from './layout.js';
+import { buildDependencyGraph, computeLockedGods } from './layout.js';
 import { renderBoard, tileElements } from './board.js';
 import { initInfoPanel, highlightDeps, clearHighlights, selectTile } from './info-panel.js';
 import { renderTeams, markCompletedTiles } from './teams.js';
@@ -231,17 +231,10 @@ async function init() {
             if (done) rawCompleted.push(tile.name);
           });
 
-          // Determine locked god sections for this team
-          var lockedGods = {};
-          if (depGraph.godUnlockedBy) {
-            for (var god in depGraph.godUnlockedBy) {
-              var unlockers = depGraph.godUnlockedBy[god];
-              var allDone = unlockers.every(function(tileName) {
-                return rawCompleted.indexOf(tileName) !== -1;
-              });
-              if (!allDone) lockedGods[god] = true;
-            }
-          }
+          // Determine locked god sections for this team (transitive: a section
+          // unlocks only when all its unlocker tiles are done AND each of those
+          // tiles lives in a section that is itself unlocked).
+          var lockedGods = computeLockedGods(depGraph, rawCompleted);
           team.lockedGods = lockedGods;
 
           allTiles.forEach(function(tile) {
@@ -254,7 +247,23 @@ async function init() {
               // Counter-based (team effort) tile
               var val = team.counters[counter.key] || 0;
               var hasSimpleComp = counter.allowSimple && teamComps.some(function(c) { return c.sub_item === '__complete__'; });
-              if (val >= counter.target || hasSimpleComp) {
+              var counterDone = val >= counter.target || hasSimpleComp;
+              if (counter.variablePoints) {
+                // Points scale with progress (e.g. Equilibrium: 1 pt per 100k of the
+                // lowest skill, counter value already equals points earned, capped at
+                // target). Award partial points even before the tile is fully complete.
+                if (!isLocked) team.points += Math.min(val, counter.target);
+                if (counterDone) {
+                  team.completedTiles.push(tile.name);
+                } else if (val > 0) {
+                  team.inProgressTiles.push({
+                    name: tile.name,
+                    done: val,
+                    total: counter.target,
+                    format: counter.format,
+                  });
+                }
+              } else if (counterDone) {
                 team.completedTiles.push(tile.name);
                 if (!isLocked) team.points += tile.points;
               } else if (val > 0) {
