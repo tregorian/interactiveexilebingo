@@ -6,6 +6,44 @@ let allTilesRef = [];
 let depGraphRef = {};
 let teamsDataRef = null;
 
+// Highlight state — track only the tiles we actually touched so we never have to
+// re-query or re-loop the whole board on hover/click.
+let highlightedEls = [];   // tiles currently carrying dep-source / dep-target
+let selectedEl = null;     // tile carrying .selected
+let boardEl = null;
+function getBoard() {
+  if (!boardEl) boardEl = document.getElementById('board');
+  return boardEl;
+}
+
+// Remove dep classes from only the tiles we highlighted, and leave dim mode.
+function clearDepClasses() {
+  for (let i = 0; i < highlightedEls.length; i++) {
+    highlightedEls[i].classList.remove('dep-source', 'dep-target');
+  }
+  highlightedEls = [];
+  getBoard().classList.remove('dep-active');
+}
+
+// Mark the source tile and every tile in an unlocked god. Dimming of the rest is
+// handled by CSS via the #board.dep-active container class (one write, not 160).
+function applyDepHighlight(tile) {
+  const unlockGods = tile.unlocks.split('/').map(g => g.trim());
+  const srcEl = tileElements[tile.name];
+  if (srcEl) { srcEl.classList.add('dep-source'); highlightedEls.push(srcEl); }
+  let hasTargets = false;
+  for (let i = 0; i < allTilesRef.length; i++) {
+    const t = allTilesRef[i];
+    if (t.name === tile.name) continue;
+    if (unlockGods.indexOf(t.god) !== -1) {
+      const el = tileElements[t.name];
+      if (el) { el.classList.add('dep-target'); highlightedEls.push(el); hasTargets = true; }
+    }
+  }
+  if (hasTargets) getBoard().classList.add('dep-active');
+  return hasTargets;
+}
+
 export function initInfoPanel({ allTiles, depGraph, teamsData }) {
   allTilesRef = allTiles;
   depGraphRef = depGraph;
@@ -26,9 +64,8 @@ export function initInfoPanel({ allTiles, depGraph, teamsData }) {
 function closeInfoPanel() {
   document.getElementById('info-panel').classList.add('hidden');
   selectedTile = null;
-  document.querySelectorAll('.tile').forEach(el => {
-    el.classList.remove('dep-source', 'dep-target', 'dimmed', 'selected');
-  });
+  clearDepClasses();
+  if (selectedEl) { selectedEl.classList.remove('selected'); selectedEl = null; }
 }
 
 export function updateTeamsData(teamsData) {
@@ -37,36 +74,13 @@ export function updateTeamsData(teamsData) {
 
 export function highlightDeps(tile) {
   if (selectedTile) return;
-
-  const allTileEls = document.querySelectorAll('.tile');
-
   if (!tile.unlocks) return;
-
-  const unlockGods = tile.unlocks.split('/').map(g => g.trim());
-  let hasTargets = false;
-
-  allTileEls.forEach(el => {
-    const elGod = el.dataset.god;
-    if (el.dataset.tileName === tile.name) {
-      el.classList.add('dep-source');
-    } else if (unlockGods.includes(elGod)) {
-      el.classList.add('dep-target');
-      hasTargets = true;
-    } else {
-      el.classList.add('dimmed');
-    }
-  });
-
-  if (!hasTargets) {
-    allTileEls.forEach(el => el.classList.remove('dimmed'));
-  }
+  applyDepHighlight(tile);
 }
 
 export function clearHighlights() {
   if (selectedTile) return;
-  document.querySelectorAll('.tile').forEach(el => {
-    el.classList.remove('dep-source', 'dep-target', 'dimmed');
-  });
+  clearDepClasses();
 }
 
 export function selectTile(tile, el) {
@@ -75,44 +89,32 @@ export function selectTile(tile, el) {
   // Deselect if clicking the same tile
   if (selectedTile === tile.name) {
     selectedTile = null;
+    clearDepClasses();
     el.classList.remove('selected');
+    selectedEl = null;
     panel.classList.add('hidden');
-    document.querySelectorAll('.tile').forEach(e => {
-      e.classList.remove('dep-source', 'dep-target', 'dimmed', 'selected');
-    });
     return;
   }
 
   // Clear previous selection
   selectedTile = tile.name;
-  document.querySelectorAll('.tile').forEach(e => {
-    e.classList.remove('dep-source', 'dep-target', 'dimmed', 'selected');
-  });
+  clearDepClasses();
+  if (selectedEl) selectedEl.classList.remove('selected');
+  selectedEl = el;
   el.classList.add('selected');
 
-  // Show dependency highlights (persistent)
+  // Show dependency highlights (persistent). Dimming of the rest is CSS-driven.
   if (tile.unlocks) {
-    const unlockGods = tile.unlocks.split('/').map(g => g.trim());
-    document.querySelectorAll('.tile').forEach(e => {
-      if (e.dataset.tileName === tile.name) {
-        e.classList.add('dep-source');
-      } else if (unlockGods.includes(e.dataset.god)) {
-        e.classList.add('dep-target');
-      } else {
-        e.classList.add('dimmed');
-      }
-    });
+    applyDepHighlight(tile);
   }
 
-  // Highlight tiles that unlock THIS tile's god section (reverse dependency)
+  // Highlight tiles that unlock THIS tile's god section (reverse dependency).
+  // dep-source keeps them bright under the #board.dep-active dim rule.
   const tilesUnlockingThisGod = depGraphRef.godUnlockedBy[tile.god];
   if (tilesUnlockingThisGod) {
     for (const srcName of tilesUnlockingThisGod) {
       const srcEl = tileElements[srcName];
-      if (srcEl) {
-        srcEl.classList.remove('dimmed');
-        srcEl.classList.add('dep-source');
-      }
+      if (srcEl) { srcEl.classList.add('dep-source'); highlightedEls.push(srcEl); }
     }
   }
 

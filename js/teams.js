@@ -289,9 +289,8 @@ export function markCompletedTiles(teamsData, viewMode, depGraph) {
     var teams = tileTeams[tileName];
 
     if (!filterTeam && teams.length >= 2) {
+      // Blacked-out style needs no team colors; keep the tooltip for context.
       el.classList.add('completed-both');
-      el.style.setProperty('--team-color-1', teams[0].color);
-      el.style.setProperty('--team-color-2', teams[1].color);
       el.title = 'Completed by ' + teams[0].name + ' & ' + teams[1].name;
     } else {
       el.classList.add('completed-single');

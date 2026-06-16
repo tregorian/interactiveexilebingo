@@ -499,46 +499,33 @@ main {
   text-shadow: 0 0 6px var(--team-color);
 }
 
-.tile.completed-team-view {
-  box-shadow: inset 0 0 0 2px #6f6;
-  background: rgba(0, 0, 0, 0.85);
+/* Team view: a team's completed tiles are blacked out (matches completed-both) —
+   no checkmark or green glow. #board outranks the per-god backgrounds below, and
+   overrides the completed-single glow these tiles also carry. The ::after override
+   removes the completed-single checkmark too (same pseudo-element). */
+#board .tile.completed-team-view {
+  background: #0a0a0a;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.12);
 }
 
-.tile.completed-team-view > * {
-  opacity: 0.1;
+#board .tile.completed-team-view > * {
+  opacity: 0.12;
 }
 
 .tile.completed-team-view::after {
-  content: '\2713';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 2.2rem;
-  font-weight: 900;
-  color: #6f6;
-  text-shadow: 0 0 12px #6f6, 0 0 24px rgba(100, 255, 100, 0.4);
-  z-index: 2;
-  bottom: auto;
-  opacity: 1;
+  content: none;
 }
 
-.tile.completed-both {
-  box-shadow:
-    inset 0 0 0 3px #ffd700,
-    0 0 10px #ffd700,
-    0 0 20px rgba(255, 215, 0, 0.5);
+/* Neutral view: tiles both teams have completed are blacked out instead of given
+   a gold glow + checkmarks — reads as "closed out" and is cheaper to paint. The
+   #board prefix is needed to outrank the per-god background rules below. */
+#board .tile.completed-both {
+  background: #0a0a0a;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.12);
 }
 
-.tile.completed-both::after {
-  content: '\2713\2713';
-  position: absolute;
-  bottom: 1px;
-  left: 2px;
-  font-size: 0.6rem;
-  font-weight: 900;
-  color: #ffd700;
-  text-shadow: 0 0 6px #ffd700;
+#board .tile.completed-both > * {
+  opacity: 0.12;
 }
 
 /* In-progress tile */
@@ -600,7 +587,9 @@ main {
   padding: 4px;
   cursor: pointer;
   position: relative;
-  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  /* opacity is GPU-composited (cheap to animate across many tiles); filter is
+     not, so it is deliberately kept off the transition list. */
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
   border: 2px solid transparent;
   overflow: hidden;
 }
@@ -666,8 +655,12 @@ main {
   animation: pulse-glow 1.2s ease-in-out infinite;
 }
 
-.tile.dimmed {
-  filter: brightness(0.4);
+/* Dim every tile that is not part of the active dependency highlight. Driven by a
+   single container class so hover/select toggles ONE class instead of writing to
+   ~160 tiles, and uses opacity (GPU-composited) instead of filter (per-frame
+   repaint). */
+#board.dep-active .tile:not(.dep-source):not(.dep-target) {
+  opacity: 0.4;
 }
 
 @keyframes pulse-glow {
