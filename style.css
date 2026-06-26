@@ -114,6 +114,24 @@ header {
   color: #ffd700;
   text-decoration: underline;
 }
+.wom-sync-bar {
+  text-align: center;
+  padding: 2px 0 8px;
+  font-size: 0.78rem;
+  color: #9ab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.wom-sync-bar .wom-icon {
+  width: 16px;
+  height: 16px;
+}
+.wom-sync-bar strong {
+  color: #4af;
+  font-weight: 600;
+}
 /* Tile search */
 .search-bar {
   position: relative;

@@ -341,6 +341,20 @@ async function init() {
     return;
   }
 
+  // Show when XP/KC counters were last synced from Wise Old Man (latest across teams)
+  var latestSync = null;
+  teamsData.teams.forEach(function(team) {
+    var ts = (team.counters || {}).wom_synced_at;
+    if (ts) {
+      var d = new Date(ts);
+      if (!isNaN(d.getTime()) && (!latestSync || d > latestSync)) latestSync = d;
+    }
+  });
+  if (latestSync) {
+    document.getElementById('wom-sync-time').textContent = latestSync.toLocaleString();
+    document.getElementById('wom-sync-bar').style.display = 'flex';
+  }
+
   // Update info panel with teams data and render
   initInfoPanel({ allTiles, depGraph, teamsData });
   renderTeams(teamsData);
